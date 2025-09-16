@@ -23,3 +23,160 @@
 
 ***
 
+## Structure YAML
+
+Un fichier YAML Kubernetes suit une structure commune composée de quatre champs racine essentiels :
+- `apiVersion` : précise la version de l’API Kubernetes utilisée pour l’objet.
+- `kind` : indique le type d’objet à créer (ici, un Pod ; d’autres types possibles sont Service, ReplicaSet, Deployment).
+- `metadata` : contient des informations sur l’objet comme son nom (`name`) et ses étiquettes (`labels`).
+- `labels` sont des paires clé-valeur utiles pour identifier et filtrer les objets (par exemple, distinguer les Pod de type `front-end` ou `back-end`).
+- `spec` : définit les spécifications de l’objet. Dans le cas d’un Pod, cela inclut la liste des conteneurs à déployer ; chaque conteneur est défini par un nom et une image, ici `nginx`.
+
+Voici un exemple de fichier YAML pour créer un Pod nommé `myapp-pod` avec un conteneur NGINX :
+
+```yaml
+# pod-definition.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+    type: front-end
+spec:
+  containers:
+    - name: nginx-container
+      image: nginx
+```
+
+Pour créer ce Pod dans Kubernetes, utilisez la commande `kubectl create` ou `kubectl apply` :
+
+* kubectl create : \
+créer un nouvel objet dans le cluster à partir d’un fichier YAML.\
+Si l’objet existe déjà avec le même nom, la commande échoue et signale une erreur.\
+Usage typique : déploiement initial, quand l’objet n’existe pas encore.\
+* kubectl apply : \
+créer l’objet s’il n’existe pas, ou mettre à jour la configuration de l’objet s’il existe déjà.\
+C’est la commande conseillée pour gérer les objets Kubernetes dans le temps, car elle permet des mises à jour sans supprimer et recréer complètement les ressources.
+
+```
+$ kubectl apply -f pod-definition.yml
+```
+Affiche la liste des Pods présents dans le cluster :
+```
+$ kubectl get pods
+```
+
+Pour afficher les détails d’un Pod, la commande :
+```
+$ kubectl describe pod myapp-pod
+```
+Donne toutes les informations sur sa configuration, les labels, les conteneurs, et les événements associés.
+
+***
+
+## Diagnostiquer un Pod
+
+```
+$ kubectl describe pod myapp-pod
+
+Name:             myapp-pod
+Namespace:        default
+Priority:         0
+Service Account:  default
+Node:             minikube/192.168.49.2
+Start Time:       Tue, 16 Sep 2025 12:04:36 +0200
+Labels:           app=myapp
+                  type=front-end
+Annotations:      <none>
+Status:           Running
+IP:               10.244.0.115
+IPs:
+  IP:  10.244.0.115
+Containers:
+  nginx-container:
+    Container ID:   docker://7e6e814951f6daf1749416b05c1a730131bedb271083061407393a4af074953f
+    Image:          nginx
+    Image ID:       docker-pullable://nginx@sha256:d5f28ef21aabddd098f3dbc21fe5b7a7d7a184720bc07da0b6c9b9820e97f25e
+    Port:           <none>
+    Host Port:      <none>
+    State:          Running
+      Started:      Tue, 16 Sep 2025 12:04:37 +0200
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-kzvtz (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True 
+  Initialized                 True 
+  Ready                       True 
+  ContainersReady             True 
+  PodScheduled                True 
+Volumes:
+  kube-api-access-kzvtz:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  35s   default-scheduler  Successfully assigned default/myapp-pod to minikube
+  Normal  Pulling    35s   kubelet            Pulling image "nginx"
+  Normal  Pulled     34s   kubelet            Successfully pulled image "nginx" in 1.21s (1.21s including waiting). Image size: 192385289 bytes.
+  Normal  Created    34s   kubelet            Created container: nginx-container
+  Normal  Started    33s   kubelet            Started container nginx-container
+```
+
+Pour diagnostiquer rapidement si un Pod est en bon état à partir du résultat de la commande `kubectl describe pod <pod-name>`, voici les éléments essentiels à vérifier :
+
+### 1. État général du Pod
+- **Status :**
+    - `Running` signifie que le Pod fonctionne normalement.
+    - D'autres états comme `Pending`, `CrashLoopBackOff` ou `Failed` indiquent des problèmes.
+- **Conditions :**
+    - Cherchez `Ready` avec la valeur `True`. Cela signifie que le Pod est prêt à recevoir du trafic.
+    - `Initialized` et `PodScheduled` doivent également être à `True`.
+
+### 2. Conteneurs du Pod
+- **State (État) :**
+    - `Running` indique que le conteneur tourne.
+    - `Waiting` ou `Terminated` peut signaler des problèmes ; vous pouvez inspecter les raisons dans les événements ou logs.
+- **Ready :**
+    - `True` signifie que le conteneur est prêt.
+- **Restart Count :**
+    - Un nombre élevé indique que le conteneur redémarre souvent, symptôme de crashs ou erreurs (souvent `CrashLoopBackOff`).
+
+### 3. Informations sur l’image
+- Vérifiez que l’image (`Image`) est bonne et a été correctement téléchargée (`Image pulled`).
+
+### 4. Node et IP
+- Confirmez sur quel **Node** le Pod tourne.
+- Notez l’**IP** attribuée au Pod.
+
+### 5. Volumes montés
+- Vérifiez que les volumes nécessaires sont bien montés et notés dans la section `Mounts`.
+
+### 6. Événements récents
+- Regardez les événements en bas du descriptif :
+    - `Scheduled` : Pod bien affecté à un node.
+    - `Pulling` et `Pulled` : image récupérée correctement.
+    - `Created` et `Started` : conteneur lancé correctement.
+    - Événements de type `Warning` ou erreurs indiquent des problèmes à investiguer.
+
+### En résumé rapide pour un Pod sain
+- `Status` = Running
+- Conditions `Ready`, `Initialized`, `PodScheduled` = True
+- Conteneurs `State` = Running, `Ready` = True, `Restart Count` = 0
+- Événements normaux sans erreurs ni warnings
+
+Si des dysfonctionnements apparaissent (ex : Pod en Pending, CrashLoopBackOff, erreurs d’image), la commande `kubectl logs <pod-name>` permet d’aller plus loin pour analyser les logs des conteneurs.
+
