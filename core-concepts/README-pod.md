@@ -76,7 +76,7 @@ Donne toutes les informations sur sa configuration, les labels, les conteneurs, 
 
 ***
 
-## Diagnostiquer un Pod
+## Diagnostiquer un Pod `kubectl describe pod <my-pod>`
 
 ```
 $ kubectl describe pod myapp-pod
@@ -178,5 +178,51 @@ Pour diagnostiquer rapidement si un Pod est en bon état à partir du résultat 
 - Conteneurs `State` = Running, `Ready` = True, `Restart Count` = 0
 - Événements normaux sans erreurs ni warnings
 
-Si des dysfonctionnements apparaissent (ex : Pod en Pending, CrashLoopBackOff, erreurs d’image), la commande `kubectl logs <pod-name>` permet d’aller plus loin pour analyser les logs des conteneurs.
+## 
+
+## Diagnostiquer un Pod `kubectl logs <my-pod>`
+
+Si des dysfonctionnements apparaissent (ex : Pod en Pending, CrashLoopBackOff, erreurs d’image), la commande `kubectl logs <my-pod>` permet d’aller plus loin pour analyser les logs des conteneurs.
+
+```
+$ kubectl logs myapp-pod
+
+rypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+/docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+10-listen-on-ipv6-by-default.sh: info: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+/docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+/docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+/docker-entrypoint.sh: Configuration complete; ready for start up
+2025/09/16 10:04:38 [notice] 1#1: using the "epoll" event method
+2025/09/16 10:04:38 [notice] 1#1: nginx/1.29.1
+2025/09/16 10:04:38 [notice] 1#1: built by gcc 12.2.0 (Debian 12.2.0-14+deb12u1) 
+2025/09/16 10:04:38 [notice] 1#1: OS: Linux 6.1.0-37-amd64
+2025/09/16 10:04:38 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+2025/09/16 10:04:38 [notice] 1#1: start worker processes
+2025/09/16 10:04:38 [notice] 1#1: start worker process 30
+2025/09/16 10:04:38 [notice] 1#1: start worker process 31
+2025/09/16 10:04:38 [notice] 1#1: start worker process 32
+```
+
+Voici les éléments essentiels à vérifier :
+
+### Points clés relevés dans les logs
+- Le conteneur initialise correctement sa configuration sans erreur :
+  ```
+  Configuration complete; ready for```art up
+  ```
+- Le serveur NGINX démarre avec la méthode d’événement `epoll` (optimisée pour Linux) :
+  ```
+  using the "epoll" event method
+ ````
+- La version de NGINX utilisée est la 1.29.1, compilée avec GCC 12.2 sur Debian Linux.  
+- Le serveur lance plusieurs processus worker qui vont gérer les requêtes web :  
+  ```
+  start worker process 30
+  start worker```ocess 31
+ ```art worker```ocess 32
+ ````
 
