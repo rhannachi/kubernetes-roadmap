@@ -23,7 +23,7 @@
 
 ***
 
-## Structure YAML
+## Structure Pod YAML
 
 Un fichier YAML Kubernetes suit une structure commune composée de quatre champs racine essentiels :
 - `apiVersion` : précise la version de l’API Kubernetes utilisée pour l’objet.
@@ -63,16 +63,44 @@ C’est la commande conseillée pour gérer les objets Kubernetes dans le temps,
 ```
 $ kubectl apply -f pod-definition.yml
 ```
-Affiche la liste des Pods présents dans le cluster :
+Affiche la liste des Pods présents dans le cluster :\
+La colonne READY dans la sortie de la commande kubectl get pods affiche le nombre de conteneurs en cours d'exécution et prêts dans un Pod, par rapport au nombre total de conteneurs définis dans ce Pod.
 ```
 $ kubectl get pods
+NAME            READY   STATUS             RESTARTS      AGE
+newpods-mvvrh   1/1     Running            1 (13m ago)   29m
+webapp          1/2     ImagePullBackOff   0             20m
 ```
 
-Pour afficher les détails d’un Pod, la commande :
+Pour afficher les détails d’un Pod, la commande :\
+Donne toutes les informations sur sa configuration, les labels, les conteneurs, et les événements associés.
 ```
 $ kubectl describe pod myapp-pod
 ```
-Donne toutes les informations sur sa configuration, les labels, les conteneurs, et les événements associés.
+
+Création du Pod (méthode impérative):\
+Pour créer un Pod nommé `my-pod-nginx` à partir de l’image officielle `nginx`
+```
+$ kubectl run my-pod-nginx --image=nginx
+```
+Suppression du Pod
+```
+$ kubectl delete pod my-pod-nginx
+```
+
+***
+
+## Modifier un Pod Kubernetes
+
+- Un Pod est une ressource immuable, on ne peut pas modifier toutes ses propriétés directement.
+- Pour modifier un Pod :
+  1. Extraire la définition YAML actuelle du Pod avec :  
+     `kubectl get pod <nom-du-pod> -o yaml > pod-definition.yaml`
+  2. Modifier le fichier YAML obtenu (par exemple changer l’image dans `spec.containers[*].image`).
+  3. Supprimer l’ancien Pod avec :  
+     `kubectl delete pod <nom-du-pod>`
+  4. Recréer le Pod avec la nouvelle définition :  
+     `kubectl apply -f pod-definition.yaml`
 
 ***
 
