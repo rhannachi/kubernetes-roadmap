@@ -178,7 +178,7 @@ Pour diagnostiquer rapidement si un Pod est en bon état à partir du résultat 
 - Conteneurs `State` = Running, `Ready` = True, `Restart Count` = 0
 - Événements normaux sans erreurs ni warnings
 
-## 
+***
 
 ## Diagnostiquer un Pod `kubectl logs <my-pod>`
 
@@ -211,18 +211,14 @@ Voici les éléments essentiels à vérifier :
 
 ### Points clés relevés dans les logs
 - Le conteneur initialise correctement sa configuration sans erreur :
-  ```
-  Configuration complete; ready for```art up
-  ```
+  `Configuration complete; ready for start up`
 - Le serveur NGINX démarre avec la méthode d’événement `epoll` (optimisée pour Linux) :
-  ```
-  using the "epoll" event method
- ````
+  `using the "epoll" event method`
 - La version de NGINX utilisée est la 1.29.1, compilée avec GCC 12.2 sur Debian Linux.  
-- Le serveur lance plusieurs processus worker qui vont gérer les requêtes web :  
-  ```
+- Le serveur lance plusieurs processus worker qui vont gérer les requêtes web :
+```
   start worker process 30
-  start worker```ocess 31
- ```art worker```ocess 32
- ````
+  start worker process 31
+  start worker process 32
+```
 
