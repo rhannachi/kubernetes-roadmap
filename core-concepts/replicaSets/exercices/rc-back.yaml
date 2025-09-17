@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: back-replicationcontroller
+spec:
+  # le selector n'est pas obligatoire car on doit obligatoirement définir template dans ReplicationController.
+  # on peut indiquer ici dans le selector d'autres pods à part label-backend-pod, et notre ReplicationController les gérera aussi
+  # ReplicationController surveille tous les Pods qui correspondent aux labels définis dans son selector, même ceux créés en dehors de son propre template.
+  selector:
+    type: label-backend-pod
+  replicas: 3
+  # le template est obligatoire !
+  template:
+    metadata:
+      # name: backend-pod    # Il vaut mieux ne pas définir un nom ici car les Pods auront un nom généré automatiquement.
+      labels:
+        type: label-backend-pod
+        app: label-pods
+    spec:
+      containers:
+        - name: node-container
+          image: node:current-alpine3.22
+          command:
+            - node
+            - -e
+            - "require('http').createServer((req,res)=>res.end('Hello from inline Node server')).listen(3000,()=>console.log('Server started'))"
+          ports:
+            - containerPort: 3000

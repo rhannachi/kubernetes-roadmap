@@ -72,11 +72,18 @@ Un ReplicaSet peut être mis à l’échelle de deux manières :
 ***
 
 ### À propos du champ `selector`
+
 - Dans un **ReplicationController** :
-    - Le `selector` n’est **pas obligatoire**.
-    - Si tu ne le fournis pas, Kubernetes utilise automatiquement les labels du `template` pour identifier les Pods à gérer.
-- Dans un **ReplicaSet** (successeur recommandé du RC) :
-    - Le `selector` est **obligatoire**.
-    - Tu dois définir un `matchLabels` (ou `matchExpressions`) pour indiquer explicitement quels Pods sont contrôlés.
-    - Cela rend le comportement plus flexible, car un ReplicaSet peut gérer des Pods créés en dehors de lui, du moment qu’ils correspondent aux labels spécifiés.
+    - Le champ `selector` est **optionnel**.
+    - S'il n'est pas défini explicitement, Kubernetes utilise par défaut les labels du pod `template` pour déterminer quels Pods il doit gérer.
+    - Le ReplicationController gère donc automatiquement les Pods créés à partir de son `template` et peut aussi reconnaître d’autres Pods existants ayant les mêmes labels. Cependant, seuls les Pods créés via son `template` sont sous sa gestion complète (création, remplacement).
+
+- Dans un **ReplicaSet** (successeur recommandé du ReplicationController) :
+    - Le champ `selector` est **obligatoire** et doit être défini explicitement (par `matchLabels` ou `matchExpressions`).
+    - Ce selector indique précisément quels Pods le ReplicaSet doit surveiller pour maintenir le nombre désiré de réplicas.
+    - Seuls les Pods créés à partir de son propre `template` sont gérés automatiquement (créés, remplacés en cas d’échec).
+    - Les autres Pods, même s'ils ont des labels correspondants, ne seront *pas* sous la gestion automatique du ReplicaSet à moins d'avoir une référence propriétaire (ownerReference) liée à ce ReplicaSet, ce qui n'arrive que quand ils sont créés via son `template`.
+
+En résumé, **un ReplicationController ou ReplicaSet gère automatiquement uniquement les Pods qu’il crée via son propre template.**  
+Le selector sert à identifier les Pods associés, mais ne suffit pas à étendre la gestion automatique à des Pods externes au template.
 

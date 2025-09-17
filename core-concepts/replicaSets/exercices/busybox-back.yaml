@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox-back-helper
+  labels:
+    type: label-backend-pod
+    app: label-pods
+spec:
+  containers:
+    - name: busybox-back-container
+      image: busybox
+      command:
+        - sleep
+        - "3600" # Le container reste actif 3600s pour debug/test
+      tty: true
+      stdin: true

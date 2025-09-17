@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: front-replicaset  # Nom du ReplicaSet
+spec:
+  # Selector obligatoire correspondant à au moins une clé/valeur dans les labels des Pods
+  selector:
+    matchLabels:
+      type: label-frontend-pod
+  replicas: 3 # Nombre de répliques souhaitées
+  # le template est obligatoire !
+  template:
+    metadata:
+      # name: backend-pod    # Il vaut mieux ne pas définir un nom ici car les Pods auront un nom généré automatiquement.
+      labels:
+        type: label-frontend-pod
+        app: label-pods
+    spec:
+      containers:
+        - name: nginx-container
+          image: nginx:stable-alpine-perl
