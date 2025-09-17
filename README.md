@@ -8,3 +8,4 @@
 3. **[Pod](core-concepts/README-pod.md)**
 4. **[ReplicaSets](core-concepts/replicaSets/README.md)**, 
    1. [Exercice](core-concepts/replicaSets/exercices/README.md)
+5. **[Deployment](core-concepts/deployment/README.md)**
