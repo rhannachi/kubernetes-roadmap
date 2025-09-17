@@ -1,5 +1,7 @@
 # ReplicaSets
 
+[exercices](exercices/README.md)
+
 ### Le besoin de réplication
 Imaginons un scénario simple avec un seul Pod hébergeant notre application. Si ce Pod échoue, les utilisateurs perdront immédiatement l’accès à l’application.\
 Pour éviter cela, il est préférable d’exécuter plusieurs Pods de la même application en parallèle. Ainsi, même si un Pod tombe, d’autres continuent à fonctionner, assurant **haute disponibilité** et **tolérance aux pannes**.
