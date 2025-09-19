@@ -15,5 +15,7 @@
 7. **[Exercices](core-concepts/README-exercices.md)**
 
 ## Config
-1. **[Command & Args](config/command-args-env/README-command-args.md)**
+1. **[Command & Args](config/command-args/README.md)**
+   1. [Exercice](config/command-args/README.md)
+2. **[Env configMap secret](config/env-configmap-secret/README.md)**
 
