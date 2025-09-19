@@ -1,4 +1,4 @@
-# Kubernetes Roadmap
+# Kubernetes CKAD Roadmap
 
 ***
 
@@ -9,3 +9,10 @@
 4. **[ReplicaSets](core-concepts/replicaSets/README.md)**, 
    1. [Exercice](core-concepts/replicaSets/exercices/README.md)
 5. **[Deployment](core-concepts/deployment/README.md)**
+   1. [Exercice](core-concepts/deployment/exercices/README.md)
+6. **[Namespace](core-concepts/namespace/README.md)**
+   1. [Exercice](core-concepts/namespace/exercices/README.md)
+7. **[Exercices](core-concepts/README-exercices.md)**
+
+### TODO
+
