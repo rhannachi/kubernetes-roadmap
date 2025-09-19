@@ -1,4 +1,4 @@
-### Exercices :
+# Exercices :
 
 **1. Créer un Deployment basique**\
 Rédige un manifeste YAML pour déployer une image nginx avec 3 réplicas et applique-le avec `kubectl apply -f`.
@@ -24,7 +24,7 @@ Avec `kubectl rollout pause deployment <nom>`, suspends le rollout, puis modifie
 **8. Ajouter des labels et sélectionner les Pods**\
 Ajoute des labels à ton manifeste de Deployment. Utilise ensuite `kubectl get pods --selector=<label>=<valeur>` pour filtrer les Pods.
 
-### Solution :
+# Solution :
 
 **1. Créer un Deployment basique**\
 [nginx-deployment.yaml](nginx-deployment.yaml)
