@@ -18,4 +18,5 @@
 1. **[Command & Args](config/command-args/README.md)**
    1. [Exercice](config/command-args/README.md)
 2. **[Env configMap secret](config/env-configmap-secret/README-env-configmap.md)**
+3. **[Secret](config/env-configmap-secret/README-secret.md)**
 

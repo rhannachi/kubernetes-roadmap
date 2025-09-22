@@ -1,0 +1,55 @@
+# Définition d'un ConfigMap pour stocker les variables d'environnement
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-configmap
+data:
+  var_env_2: "valeur de la variable d'environnement 2"
+  var_env_3: "valeur de la variable d'environnement 3"
+  var_env_4: "valeur de la variable d'environnement 4"
+
+# Pod 1 : Affiche les variables d'environnement (directes + ConfigMap) dans les logs
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-container-1
+spec:
+  containers:
+    - name: my-container-1
+      image: nginx:alpine
+      command: [ "sh", "-c" ]
+      args:
+        - printenv && nginx -g 'daemon off;'
+      env:
+        # Variable d'environnement définie en dur
+        - name: VAR_ENV_1
+          value: "valeur de la variable d'environnement 1"
+        # Variables injectées depuis le ConfigMap
+        - name: VAR_ENV_2
+          valueFrom:
+            configMapKeyRef:
+              name: my-configmap
+              key: var_env_2
+        - name: VAR_ENV_3
+          valueFrom:
+            configMapKeyRef:
+              name: my-configmap
+              key: var_env_3
+# Pod 2 : Affiche toutes les variables du ConfigMap dans les logs
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-container-2
+spec:
+  containers:
+    - name: my-container-2
+      image: nginx:alpine
+      command: [ "sh", "-c" ]
+      args:
+        - printenv && nginx -g 'daemon off;'
+      envFrom:
+        - configMapRef:
+            name: my-configmap
