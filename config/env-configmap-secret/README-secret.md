@@ -14,9 +14,9 @@ Les Secrets dans Kubernetes sont des objets conçus pour stocker et gérer des i
 Supposons que l’on veuille créer un Secret avec un nom d’utilisateur et un mot de passe.
 
 D'abord, on encode les valeurs en base64 :
-```bash
-echo -n 'admin' | base64     # YWRtaW4=
-echo -n '1f2d1e2e67df' | base64 # MWYyZDFlMmU2N2Rm
+```
+$ echo -n 'admin' | base64     # YWRtaW4=
+$ echo -n '1f2d1e2e67df' | base64 # MWYyZDFlMmU2N2Rm
 ```
 
 Exemple de manifeste YAML pour un Secret :
@@ -32,8 +32,8 @@ data:
 ```
 
 On crée ensuite ce Secret dans Kubernetes avec la commande :
-```bash
-kubectl apply -f secret.yaml
+```
+$ kubectl apply -f secret.yaml
 ```
 
 ## Utilisation des Secrets dans un Pod
