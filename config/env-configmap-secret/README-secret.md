@@ -89,4 +89,4 @@ Dans ce cas, les fichiers `/etc/secret/username` et `/etc/secret/password` conti
 - Faites pivoter vos secrets régulièrement, Kubernetes ne le fait pas automatiquement.
 - Séparez les namespaces pour isoler les secrets des applications différentes.
 - Préférez le montage de Secrets sous forme de volumes montés en tmpfs pour une meilleure sécurité.
-
+- Pour aller plus loin dans la gestion et la configuration des secrets avec AWS et Kubernetes: https://www.youtube.com/watch?v=MTnQW9MxnRI
