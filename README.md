@@ -24,4 +24,5 @@
 4. **[Encryption configuration](config/env-configmap-secret/README-security-etcd.md)**
 5. **[Security context](config/security-context/README.md)**
    1. [Exercice](config/security-context/pod-security-context.yaml)
+6. **[Resource](config/resources/README.md)**
 

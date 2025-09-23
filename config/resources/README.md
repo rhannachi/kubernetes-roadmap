@@ -144,26 +144,31 @@ Ici :
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: default-limits
-  namespace: dev-team
+  name: example-limitrange
 spec:
   limits:
-  - type: Container
-    default:
-      cpu: 500m
-      memory: 512Mi
-    defaultRequest:
-      cpu: 250m
-      memory: 256Mi
-    max:
-      cpu: 1
-      memory: 1Gi
-    min:
-      cpu: 100m
-      memory: 128Mi
+    - type: Container  # Ces paramètres s'appliquent au niveau des conteneurs dans le namespace
+      max:
+        cpu: "1"        # Limite maximale de CPU qu'un conteneur peut demander (1 cœur ici)
+        memory: 500Mi   # Limite maximale de mémoire qu'un conteneur peut demander
+      min:
+        cpu: 100m       # Limite minimale de CPU qu'un conteneur doit demander (100 milli-CPU ici)
+        memory: 200Mi   # Limite minimale de mémoire qu'un conteneur doit demander
+      default:          ## resources.limits (dans le container)
+        cpu: 500m       # Valeur par défaut de la limite CPU appliquée si aucune limite spécifique n'est définie par le conteneur
+        memory: 300Mi   # Valeur par défaut de la limite mémoire appliquée si aucune limite spécifique n'est définie
+      defaultRequest:   ## resources.requests (dans le container)
+        cpu: 200m       # Valeur par défaut de la demande de CPU (ressource réservée garantie) si aucune demande n'est spécifiée par le conteneur
+        memory: 200Mi   # Valeur par défaut de la demande mémoire si aucune demande spécifique n'est précisée
 ```
 - Si un Pod est créé sans spécifier ses ressources, il héritera de ces valeurs par défaut.
 - Un conteneur ne pourra pas demander moins de 100m CPU ni plus de 1 CPU, et pareil pour la mémoire.
+
+**Dans un objet LimitRange Kubernetes,** le champ "type" peut prendre plusieurs valeurs autres que "Container". Les types les plus courants sont :
+- **Container** : les limites s’appliquent aux ressources des conteneurs individuels dans un Pod. (Le cas le plus utilisé)
+- **Pod** : les limites s’appliquent au Pod dans son ensemble, c’est-à-dire la somme des ressources de tous les conteneurs dans ce Pod.
+- **PersistentVolumeClaim** : les limites s’appliquent aux volumes persistants demandés dans le namespace, en limitant par exemple la taille maximale des volumes.
+- D'autres types plus rares ou spécifiques peuvent exister selon les versions et extensions Kubernetes.
 
 ### Quand utiliser LimitRange ?
 - Pour **imposer une discipline** d’attribution des ressources au sein d’un Namespace.
@@ -187,18 +192,21 @@ spec:
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: team-quota
-  namespace: dev-team
+  name: example-resourcequota
+  namespace: mon-namespace  # Le namespace où s'applique ce quota
 spec:
   hard:
-    requests.cpu: "2"       # Total CPU minimum demandée dans le Namespace
-    requests.memory: 4Gi    # Total mémoire minimum demandée
-    limits.cpu: "4"         # Total CPU maximum limitée
-    limits.memory: 8Gi      # Total mémoire maximum limitée
-    pods: "10"              # Max 10 Pods dans le Namespace
+    pods: "10"                # Limite maximale du nombre total de pods dans ce namespace
+    requests.cpu: "4"         # Limite maximale de la somme des demandes CPU de tous les pods
+    requests.memory: "8Gi"    # Limite maximale de la somme des demandes mémoire de tous les pods
+    limits.cpu: "10"          # Limite maximale de la somme des limites CPU de tous les pods
+    limits.memory: "16Gi"     # Limite maximale de la somme des limites mémoire de tous les pods
+    persistentvolumeclaims: "5"      # Limite du nombre total de PVC (volumes persistants) dans ce namespace
+    requests.storage: "100Gi"         # Limite maximale de la somme des tailles demandées pour les volumes persistants
+    services.loadbalancers: "2"      # Limite du nombre maximal de services de type LoadBalancer
 ```
-- Le Namespace `dev-team` ne pourra pas dépasser 2 CPU prescrits au total et 4 Gi de mémoire demandée par tous ses Pods cumulés.
-- Empêche des déploiements ou la création de Pods qui dépasseraient ces limites globales.
+
+Ce ResourceQuota garantit que les ressources sont partagées de manière équilibrée et évite qu’un namespace ne consomme plus que sa part, préservant ainsi la stabilité du cluster Kubernetes.
 
 ### Quand utiliser ResourceQuota ?
 - Dans des Cluster partagés par **plusieurs équipes ou projets**.
