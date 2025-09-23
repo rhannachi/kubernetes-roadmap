@@ -1,5 +1,7 @@
+# Security context
+
 ## Gestion des utilisateurs
-[Exercice](exercices/pod-security-context.yaml)\
+[Exercice](pod-security-context.yaml)\
 Par défaut, Docker exécute les processus à l’intérieur d’un conteneur avec l’utilisateur root. Cela peut représenter un risque, même si Docker restreint les privilèges root à l’aide des *capabilities* Linux.
 
 Il est recommandé de :

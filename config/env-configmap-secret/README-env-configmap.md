@@ -1,5 +1,5 @@
 ## Variables d'environnement
-[Exercice](exercices/deployment-env-configmap.yaml)
+[Exercice](deployment-env-configmap.yaml)
 
 Dans Kubernetes, les variables d'environnement permettent de passer des données de configuration à un conteneur à son démarrage.
 
@@ -32,7 +32,7 @@ Dans cet exemple, la variable `DEMO_ENV` est définie avec une valeur simple. Le
 ***
 
 ## ConfigMaps
-[Exercice](exercices/deployment-env-configmap.yaml)\
+[Exercice](deployment-env-configmap.yaml)\
 Un **ConfigMap** est un objet Kubernetes qui permet de stocker des données de configuration sous forme de paires clé-valeur, séparément de l’image conteneur. Cela permet de modifier la configuration sans reconstruire l’image.
 
 ### Exemple de création d’un ConfigMap :
