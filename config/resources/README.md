@@ -7,7 +7,7 @@ Lorsqu’un Pod doit être programmé, c’est le Scheduler de Kubernetes qui d�
 Si un Node ne dispose pas de ressources suffisantes, le Scheduler évite d’y placer le Pod. Dans le cas où aucune ressource n’est disponible sur l’ensemble des Nodes, le Pod reste en état *Pending*.\
 La commande `kubectl describe pod` permet alors d’afficher les événements et de constater, par exemple, une insuffisance de CPU.
 
-## Requests et Limits
+## 1. Requests et Limits
 Lors de la création d’un Pod, il est possible de définir des **Requests** (demande minimale garantie) et des **Limits** (quantité maximale utilisable) pour CPU et mémoire à l’intérieur de chaque conteneur.
 
 - Une **Request** représente la quantité minimale de ressources garantie pour un conteneur. Elle est utilisée par le Scheduler afin de trouver un Node adéquat.
@@ -131,7 +131,7 @@ Ici :
 ***
 ***
 
-## LimitRange : Définir des standards et contraintes par conteneur dans un Namespace
+## 2. LimitRange : Définir des standards et contraintes par conteneur dans un Namespace
 
 ### Qu’est-ce que LimitRange ?
 - Objet Kubernetes appliqué **au niveau d’un Namespace**.
@@ -179,7 +179,7 @@ spec:
 ***
 ***
 
-## ResourceQuota : Limiter la consommation globale des ressources dans un Namespace
+## 3. ResourceQuota : Limiter la consommation globale des ressources dans un Namespace
 
 ### Qu’est-ce que ResourceQuota ?
 - Objet Kubernetes appliqué **au niveau d’un Namespace**.
