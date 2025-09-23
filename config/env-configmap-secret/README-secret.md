@@ -1,5 +1,5 @@
 # Secrets
-
+[Exercice](exercices/deployment-secret.yaml)\
 Les Secrets dans Kubernetes sont des objets conçus pour stocker et gérer des informations sensibles comme les mots de passe, les clés API, les certificats, etc. Ils permettent d’isoler ces données confidentielles du code source, en les encodant en base64 et en limitant leur accès aux pods qui en ont besoin, évitant ainsi de les exposer dans les configurations standard ou le code.
 
 ## Concepts clés des Secrets Kubernetes

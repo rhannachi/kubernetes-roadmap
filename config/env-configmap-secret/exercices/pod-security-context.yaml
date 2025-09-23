@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-pod
+spec:
+  securityContext:
+    runAsUser: 1001    # Par défaut, tous les conteneurs du pod s'exécutent en tant qu'utilisateur UID 1001
+  containers:
+    - image: ubuntu
+      name: web
+      command: ["sleep", "5000"]
+      securityContext:
+        runAsUser: 1002  # Ce conteneur s'exécute avec UID 1002 (remplace le runAsUser du pod)
+        # => web: utilisateur UID 1002
+
+    - image: ubuntu
+      name: sidecar
+      command: ["sleep", "5000"]
+      # Pas de securityContext au niveau conteneur, hérite donc du Pod (UID 1001)
+      # => sidecar: utilisateur UID 1001

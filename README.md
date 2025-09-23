@@ -18,5 +18,10 @@
 1. **[Command & Args](config/command-args/README.md)**
    1. [Exercice](config/command-args/README.md)
 2. **[Env configMap secret](config/env-configmap-secret/README-env-configmap.md)**
+   1. [Exercice](config/env-configmap-secret/exercices/deployment-env-configmap.yaml)
 3. **[Secret](config/env-configmap-secret/README-secret.md)**
+   1. [Exercice](config/env-configmap-secret/exercices/deployment-secret.yaml)
+4. **[Encryption configuration](config/env-configmap-secret/README-security-etcd.md)**
+5. **[Security context](config/env-configmap-secret/README-security-context.md)**
+   1. [Exercice](config/env-configmap-secret/exercices/pod-security-context.yaml)
 
