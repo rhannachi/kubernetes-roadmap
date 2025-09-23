@@ -25,4 +25,6 @@
 5. **[Security context](config/security-context/README.md)**
    1. [Exercice](config/security-context/pod-security-context.yaml)
 6. **[Resource](config/resources/README.md)**
+7. **[Service account](config/service-account/README.md)**
+   1. [Exercice](config/service-account/exercices/service-account-config.yaml)
 
