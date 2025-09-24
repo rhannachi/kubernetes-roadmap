@@ -27,8 +27,13 @@ Exemple :
 - Ajoute un taint sur le Node `<node-name>` avec la clé `"app"`, la valeur `"blue"` et l’effet `"NoSchedule"`.
 - **Conséquence** : Aucun Pod sans *toleration* correspondante ne pourra être planifié sur ce Node.
 
+Pour ajouter une **taint**:
 ```
 $ kubectl taint nodes <node-name> app=blue:NoSchedule
+```
+Pour supprimer une **taint**
+```
+$ kubectl taint nodes <node-name> app=blue:NoSchedule-
 ```
 
 - Exemple de manifest Pod avec *toleration* correspondante :

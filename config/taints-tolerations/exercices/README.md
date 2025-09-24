@@ -1,4 +1,5 @@
 # Exercice
+
 ### Objectif
 Comprendre et expérimenter les mécanismes de taints et tolerations dans Kubernetes pour contrôler la planification des Pods sur différents Nodes dans un cluster Minikube à plusieurs nœuds.
 ### Contexte
@@ -54,7 +55,7 @@ multinode-cluster-m03   Ready    <none>          9s    v1.33.1
 ### Taint à appliquer sur un Node worker (exemple node `multinode-cluster-m02`)
 
 ```
-$ kubectl taint nodes multinode-cluster-m02 app=blue:NoSchedule
+$ kubectl taint node multinode-cluster-m02 app=blue:NoSchedule
 ```
 
 ### Deployment tolérant *NoSchedule*
@@ -89,7 +90,7 @@ spec:
 ### Taint avec effet *PreferNoSchedule* sur un autre Node (exemple node `multinode-cluster-m03`)
 
 ```
-$ kubectl taint nodes multinode-cluster-m03 app=blue:PreferNoSchedule
+$ kubectl taint node multinode-cluster-m03 app=blue:PreferNoSchedule
 ```
 
 ### Deployment tolérant *PreferNoSchedule*
