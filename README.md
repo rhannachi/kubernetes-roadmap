@@ -22,10 +22,11 @@
 3. **[Secret](config/env-configmap-secret/README-secret.md)**
    1. [Exercice](config/env-configmap-secret/deployment-secret.yaml)
 4. **[Encryption configuration](config/env-configmap-secret/README-security-etcd.md)**
-5. **[Security context](config/security-context/README.md)**
-   1. [Exercice](config/security-context/pod-security-context.yaml)
+5. **[Security context](config/securityContext/README.md)**
+   1. [Exercice](config/securityContext/pod-security-context.yaml)
 6. **[Resource](config/resources/README.md)**
-7. **[Service account](config/service-account/README.md)**
-   1. [Exercice](config/service-account/exercices/service-account-config.yaml)
+7. **[Service account](config/serviceAccount/README.md)**
+   1. [Exercice](config/serviceAccount/exercices/service-account-config.yaml)
 8. **[Taints and Tolerations](config/taints-tolerations/README.md)**
    1. [Exercice](config/taints-tolerations/exercices/README.md)
+9. **[NodeSelector and NodeAffinity](config/nodeSelector-nodeAffinity/README.md)**
