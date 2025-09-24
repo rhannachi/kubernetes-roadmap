@@ -27,4 +27,4 @@
 6. **[Resource](config/resources/README.md)**
 7. **[Service account](config/service-account/README.md)**
    1. [Exercice](config/service-account/exercices/service-account-config.yaml)
-
+8. **[Taints and Tolerations](config/taints-tolerations/README.md)**
