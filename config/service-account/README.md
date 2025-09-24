@@ -29,6 +29,11 @@ default    0         48d
 myapp-sa   0         3s
 ```
 
+Pour affiche des informations détaillées sur le ServiceAccount myapp-sa
+``` 
+$ kubectl describe serviceaccount myapp-sa
+```
+
 #### 3. Déployer un Pod utilisant ce ServiceAccount
 
 Voici un extrait YAML d’un Pod qui utilise le ServiceAccount `myapp-sa` :
@@ -74,9 +79,16 @@ spec:
 Avant Kubernetes 1.24, un objet **Secret** contenant le jeton du ServiceAccount était automatiquement créé et lié au ServiceAccount.\
 Depuis 1.24, il faut générer un jeton à la demande.
 
-#### Générer un jeton manuel (Kubernetes 1.24+)
+Si ton cluster utilise une version antérieure :
+* Le token est dans un Secret, utilisable via :
+```
+kubectl get secret -n <namespace>
+kubectl describe secret <nom-du-secret> -n <namespace>
+```
 
-Pour générer un jeton OAuth à usage unique lié à un ServiceAccount :
+#### Générer/Afficher un jeton manuel (Kubernetes 1.24+)
+
+Pour générer/afficher un jeton OAuth à usage unique lié à un ServiceAccount :
 
 ```
 $ kubectl create token myapp-sa
