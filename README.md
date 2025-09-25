@@ -30,3 +30,5 @@
 8. **[Taints and Tolerations](config/taints-tolerations/README.md)**
    1. [Exercice](config/taints-tolerations/exercices/README.md)
 9. **[NodeSelector and NodeAffinity](config/nodeSelector-nodeAffinity/README.md)**
+   1. [Exercice 1](config/nodeSelector-nodeAffinity/exercices/README-simple.md)
+   2. [Exercice 2](config/nodeSelector-nodeAffinity/exercices/README-advanced.md)
