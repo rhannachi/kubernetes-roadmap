@@ -62,8 +62,8 @@ spec:
 1. **Tainter un Node pour qu'il refuse les Pods non tolérants**  
    On applique un taint sur un Node qui empêche tout Pod sans la bonne tolérance à y être planifié :
 
-```bash
-kubectl taint nodes node1 key=value:NoSchedule
+```
+$ kubectl taint nodes node1 key=value:NoSchedule
 ```
 
 Ici, le Node `node1` est marqué pour ne pas accueillir les Pods sans tolérance à `key=value`.
