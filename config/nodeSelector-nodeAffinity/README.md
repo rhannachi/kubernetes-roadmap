@@ -166,3 +166,94 @@ Le **Pod** sera uniquement planifié sur un **Node** qui correspond à l’un de
 | Types d’opérateurs   | =                               | In, NotIn, Exists, etc.                |
 | Flexibilité          | Limitée                         | Très flexible                         |
 
+***
+
+### Qu’est-ce que la node affinity ?
+
+La **node affinity** est une fonctionnalité de Kubernetes permettant de contrôler le placement d’un Pod sur un ou plusieurs Nodes précis, selon des critères basés sur les labels des Nodes.
+
+Elle est plus flexible que le simple **nodeSelector** car elle permet :
+- d’exprimer des contraintes strictes ou préférentielles,
+- d’utiliser plusieurs opérateurs pour filtrer (In, NotIn, Exists, etc.),
+- de mieux gérer comment les Pods sont programmés sur les Nodes.
+
+***
+
+### Les 3 types principaux d’affinité:
+
+1. **_requiredDuringSchedulingIgnoredDuringExecution_** (obligatoire) : \
+   Le Pod **ne sera programmé que sur un Node correspondant** aux critères (**requiredDuringScheduling**).  
+   Si aucun Node ne correspond, le Pod reste en état "Pending" (en attente) et ne démarre pas.  
+   (**IgnoredDuringExecution**): **Pendant l’exécution**, si les labels du Node changent, le Pod **reste quand même sur ce Node**(la contrainte est ingorée)
+
+2. **_preferredDuringSchedulingIgnoredDuringExecution_** (préférentiel) : \
+   Kubernetes **essaie** de programmer le Pod sur un Node correspondant aux critères, mais si aucun Node ne correspond, il **placera quand même le Pod sur n’importe quel Node disponible**.  
+   C’est utile pour privilégier un Node sans bloquer complètement la mise en place du Pod.
+
+3. **_requiredDuringSchedulingRequiredDuringExecution_** (strict) : \
+   Le Pod doit être lancé sur un Node qui a le label demandé,
+   et il devra toujours rester sur un Node qui respecte le label, même si celui-ci change après le démarrage.\
+   Si le Node perd le label, Kubernetes éjecte (termine) le Pod et essaie de le reprogrammer ailleurs.\
+   Cette dernière option garantit une conformité stricte à la règle d’affinité tout au long de la vie du Pod, pas seulement au lancement.\
+   **Cependant, cette option est encore en développement et non disponible en standard aujourd’hui.**
+***
+
+### Quand choisir lequel ?
+
+| Situation                                   | Recommandation                                  | Exemple concret                                   |
+|---------------------------------------------|------------------------------------------------|------------------------------------------------|
+| Placement critique, impératif                | `requiredDuringSchedulingIgnoredDuringExecution` | Pod nécessitant un GPU spécifique : le Pod doit absolument être sur un Node avec `gpu=nvidia` |
+| Placement souhaité mais pas bloquant         | `preferredDuringSchedulingIgnoredDuringExecution` | Pod qui préférerait un Node SSD mais peut tourner sur un Node classique si nécessaire |
+| Environnement dynamique, labels peuvent changer | `requiredDuringSchedulingIgnoredDuringExecution` ou envisager futur `requiredDuringSchedulingRequiredDuringExecution` | Pod sensible aux ressources spécifiques Forcer le scheduling strict mais tolérer les changements pendant l’exécution (pas encore supporté) |
+
+***
+
+### Exemples YAML simplifiés
+
+**Exemple 1 : Affinité obligatoire pour un Pod GPU**
+
+```yaml
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: gpu
+            operator: In
+            values:
+            - nvidia
+```
+— Ici, le Pod ne sera lancé que si un Node avec le label `gpu=nvidia` existe.
+
+***
+
+**Exemple 2 : Affinité préférentielle pour un stockage SSD**
+
+```yaml
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: disktype
+            operator: In
+            values:
+            - ssd
+```
+— Le scheduler privilégiera un Node avec le label `disktype=ssd` mais pourra lancer le Pod ailleurs s’il n’en trouve pas.
+
+***
+
+### Ce que signifie "IgnoredDuringExecution"
+
+Cette partie indique que **seul le scheduling prend en compte les règles d’affinité**. Une fois le Pod en cours d’exécution, si par exemple le label `gpu=nvidia` est retiré du Node, le Pod continuera de tourner sans être déplacé ni évincé.
+
+***
+
+## Résumé rapide de la décision
+
+- **Si le Pod a besoin d’une ressource spécifique ou doit absolument rester sur certains Nodes**, utiliser `requiredDuringSchedulingIgnoredDuringExecution`.
+- **Si le Pod peut s’adapter et être flexible**, utiliser `preferredDuringSchedulingIgnoredDuringExecution` pour ne pas bloquer le déploiement.
