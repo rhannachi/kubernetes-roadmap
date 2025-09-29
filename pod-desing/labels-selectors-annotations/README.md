@@ -37,6 +37,12 @@ $ kubectl get pods --selector app=frontend
 $ kubectl get pods --selector app=frontend,tier=web
 ```
 
+On peut également utiliser les **labels** et **selectors** pour filtrer des objets Kubernetes (Pod, ReplicaSet, Deployment, Service, etc.) en fonction de leurs labels.\
+Par exemple, pour lister tous les objets Kubernetes dans le **Cluster** ayant le label `env=prod` dans le **namespace** `default`:
+```
+$ kubectl get all -n default --selector env=prod
+```
+
 ***
 
 ### Exemple 2 : ReplicaSet utilisant des selectors
