@@ -43,5 +43,6 @@
 2. **[Liveness probe](observability/readiness-liveness/README-liveness.md)**
 3. **[Logging](observability/logging/README.md)**
 4. **[Logging](observability/monitoring/README.md)**
+5. **[Labels, Selectors and Annotations](pod-desing/labels-selectors-annotations/README.md)**
 
 
