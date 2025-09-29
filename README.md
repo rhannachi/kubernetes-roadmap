@@ -42,5 +42,6 @@
 1. **[Readiness probe](observability/readiness-liveness/README-readiness.md)**
 2. **[Liveness probe](observability/readiness-liveness/README-liveness.md)**
 3. **[Logging](observability/logging/README.md)**
+4. **[Logging](observability/monitoring/README.md)**
 
 
