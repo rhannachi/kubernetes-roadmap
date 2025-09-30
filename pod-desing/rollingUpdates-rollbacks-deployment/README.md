@@ -211,6 +211,23 @@ Cette commande restaurera l’état du Deployment à la révision numéro 3 (ou 
 - N’oublie pas que le nombre de révisions conservées dépend du paramètre `revisionHistoryLimit` du Deployment (par défaut : 10).
 - Les commandes sont valables pour tous les objets compatibles rollout (Deployment, DaemonSet, StatefulSet).
 
+```
+$ kubectl rollout history deployment/frontend
+deployment.apps/frontend 
+REVISION  CHANGE-CAUSE
+1         <none>
+
+$ kubectl set image deployment/frontend simple-webapp=nginx:1.30 --record
+Flag --record has been deprecated, --record will be removed in the future
+deployment.apps/frontend image updated
+
+$ kubectl rollout history deployment/frontend
+deployment.apps/frontend 
+REVISION  CHANGE-CAUSE
+1         <none>
+2         kubectl set image deployment/frontend simple-webapp=nginx:1.30 --record=true
+```
+
 ***
 
 **Exemples pour manipuler l’historique et faire un rollback ciblé :**
