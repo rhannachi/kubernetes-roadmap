@@ -44,5 +44,7 @@
 3. **[Logging](observability/logging/README.md)**
 4. **[Logging](observability/monitoring/README.md)**
 5. **[Labels, Selectors and Annotations](pod-desing/labels-selectors-annotations/README.md)**
+6. **[RollingUpdates Rollbacks Deployment](pod-desing/rollingUpdates-rollbacks-deployment/README.md)**
+   1. [Exercice](pod-desing/rollingUpdates-rollbacks-deployment/exercices/README.md)
 
 
