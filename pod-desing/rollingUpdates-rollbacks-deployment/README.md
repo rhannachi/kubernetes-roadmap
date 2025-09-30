@@ -1,243 +1,222 @@
-# Déploiements : Rollouts, Updates et Rollbacks
+# Déploiements Kubernetes : Rollouts, Updates et Rollbacks
 
-Dans ce cours, nous allons voir comment gérer les **updates** et **rollbacks** dans un **Deployment** Kubernetes.\
-Pour comprendre clairement ces notions, nous allons explorer les mécanismes de **rollouts**, les différentes stratégies de mise à jour, et les commandes essentielles pour gérer vos applications.
+Ce cours explique comment Kubernetes gère les mises à jour et les retours en arrière (*rollbacks*) d’un **Deployment**.  
+Nous allons voir :
+- ce qu’est un **rollout** et comment le suivre,
+- les **stratégies de mise à jour** possibles (avec ou sans indisponibilité),
+- comment **mettre à jour** une application,
+- comment **documenter les changements avec CHANGE-CAUSE**,
+- et enfin comment **revenir en arrière** en cas de problème.
 
-### Rollouts et versions d’un Deployment
+***
 
-Quand vous créez un **Deployment**, cela déclenche automatiquement un **rollout**, qui correspond à une nouvelle révision.
-- Le premier déploiement correspond, par exemple, à la **Revision 1**.
-- Si vous mettez à jour votre application (changement de version d’image, modification du nombre de replicas, etc.), un nouveau **rollout** est lancé et une nouvelle révision est créée (**Revision 2**, **Revision 3**, etc.).
+### Qu’est-ce qu’un Rollout ?
 
-Cela permet de suivre l’historique des modifications et de revenir à une version précédente en cas de problème.
+Un **rollout** est le processus par lequel Kubernetes déploie une nouvelle version de votre application.  
+Chaque rollout crée une **nouvelle révision** du Deployment.
 
-**Commandes utiles :**
+- Exemple :
+  - Création initiale du Deployment → **Revision 1**
+  - Mise à jour de l’image, ajout d’un replica, modification d’un port… → **Revision 2**
+  - Nouvelle mise à jour → **Revision 3**, etc.
+
+Cela permet de garder un historique des versions et, si besoin, de revenir en arrière vers une version stable.
+
+**Commandes pratiques :**
 ```
-# Vérifier le statut d’un rollout
+# Vérifier le statut du rollout en cours
 $ kubectl rollout status deployment/my-app
 
-# Consulter l’historique des rollouts
+# Voir l’historique des révisions
 $ kubectl rollout history deployment/my-app
 ```
 
 ***
 
-### Stratégies de mise à jour d’un Deployment
+### Stratégies de mise à jour
 
-Il existe deux stratégies principales définies par le champ `strategy` dans un **Deployment**.
+Le comportement d’un Deployment lors d’un rollout est défini par le champ `strategy`.  
+Il existe deux stratégies principales :
 
-#### 1. Recreate strategy
-- Kubernetes détruit **toutes les instances (Pods)** de l’ancienne version puis crée les nouvelles.
-- Problème : pendant la transition, l’application est totalement indisponible.
+#### 1. Recreate
+- Tous les anciens Pods sont supprimés avant de lancer les nouveaux.
+- L’application est donc **indisponible** pendant la transition.
+- Utile uniquement si vos Pods ne peuvent pas tourner en parallèle (par exemple : base de données non clusterisée).
 
-Exemple (définition d’un Deployment avec `Recreate`):
+Exemple :
 ```yaml
 spec:
   strategy:
     type: Recreate
 ```
 
-#### 2. RollingUpdate strategy (par défaut)
-- Kubernetes remplace progressivement les Pods : il détruit un ancien Pod, puis crée un nouveau Pod, et ainsi de suite.
-- L’application reste disponible tout au long du processus.
-- Stratégie **par défaut** si aucune n’est précisée.
+#### 2. RollingUpdate (par défaut)
+- Les Pods sont remplacés **progressivement**.
+- Kubernetes supprime un ancien Pod, puis crée un nouveau Pod, et répète jusqu’à migration complète.
+- L’application reste disponible, avec éventuellement de petites variations de capacité.
 
-Exemple (définition d’un Deployment avec `RollingUpdate`):
+Exemple :
 ```yaml
 spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+      maxUnavailable: 1   # maximum 1 Pod en moins
+      maxSurge: 1         # maximum 1 Pod en plus
 ```
+
+👉 Retenez que **RollingUpdate est le choix par défaut** et assure une continuité de service.
 
 ***
 
 ### Mettre à jour un Deployment
 
-Pour effectuer une mise à jour, deux méthodes existent :
+Il existe deux manières de mettre à jour un Deployment.
 
-#### 1. Modifier le fichier manifeste et l’appliquer :
+#### 1. Via un manifeste YAML
+C’est la bonne pratique si vous gérez votre infra comme du code (GitOps, CI/CD).
 ```
-# Éditer le fichier deployment.yaml
 $ kubectl apply -f deployment.yaml
 ```
-Cela déclenche un nouveau **rollout**.
 
-#### 2. Utiliser `kubectl set image`
+#### 2. Via la ligne de commande
+Rapide mais moins traçable, car le fichier YAML n’est pas mis à jour.
 ```
-$ kubectl set image deployment/my-app my-app-container=nginx:1.27
+$ kubectl set image deployment/my-app my-container=nginx:1.27
 ```
-
-⚠️ Attention : cette commande modifie l’objet en direct sans mettre à jour votre fichier YAML, ce qui peut provoquer une désynchronisation entre le manifeste et l’état réel du cluster.
 
 ***
 
-### Vérifier un Deployment
+### Documenter les changements avec CHANGE-CAUSE
 
-Vous pouvez obtenir des détails et comprendre ce qu’il se passe en regardant la description du Deployment :
-
-```
-$ kubectl describe deployment my-app
-```
-
-Avec la stratégie `Recreate`, vous verrez que l’ancien ReplicaSet est d’abord réduit à 0 Pods puis le nouveau est créé.  
-Avec `RollingUpdate`, vous verrez des Pods migrer progressivement entre l’ancien et le nouveau ReplicaSet.
-
-***
-
-### Comment Kubernetes gère un Deployment sous le capot
-
-Lorsqu’un **Deployment** est créé pour 5 replicas :
-- Kubernetes génère un **ReplicaSet**, qui crée lui-même les **Pods**.
-- Lors d’une mise à jour (avec RollingUpdate), un **nouveau ReplicaSet** est automatiquement généré.
-- Pendant la transition :
-    - L’ancien ReplicaSet est réduit progressivement.
-    - Le nouveau ReplicaSet monte en charge progressivement.
-
-Vous pouvez observer cela avec :
-```
-$ kubectl get rs
-```
-
-Avant la mise à jour :
-- Ancien ReplicaSet : 5 Pods
-- Nouveau ReplicaSet : 0 Pods
-
-Pendant/Après la mise à jour :
-- Ancien ReplicaSet : 0 Pods
-- Nouveau ReplicaSet : 5 Pods
-
-***
-
-### Rollback d’un Deployment
-
-Si la nouvelle version présente un problème, Kubernetes permet un retour rapide à la révision précédente.
-
-**Commande de rollback :**
-```
-$ kubectl rollout undo deployment/my-app
-```
-
-Conséquence :
-- Les Pods du nouveau ReplicaSet sont supprimés.
-- Les Pods de l’ancien ReplicaSet sont relancés.
-
-Vérification avec :
-```
-$ kubectl get rs
-```
-
-Avant rollback :
-- Ancien ReplicaSet : 0 Pods
-- Nouveau ReplicaSet : 5 Pods
-
-Après rollback :
-- Ancien ReplicaSet : 5 Pods
-- Nouveau ReplicaSet : 0 Pods
-
-***
-
-### Résumé des commandes principales
+Quand vous affichez l’historique d’un Deployment avec :
 
 ```
-# Créer un Deployment
-$ kubectl create -f deployment.yaml
-
-# Lister les Deployments
-$ kubectl get deployments
-
-# Mettre à jour un Deployment via fichier
-$ kubectl apply -f deployment.yaml
-
-# Mettre à jour l’image d’un conteneur
-$ kubectl set image deployment/my-app my-app-container=nginx:1.27
-
-# Consulter l’historique des rollouts
 $ kubectl rollout history deployment/my-app
+```
 
-# Suivre le statut d’un rollout
-$ kubectl rollout status deployment/my-app
+vous verrez une colonne **CHANGE-CAUSE**.
+- Si elle est vide, c’est que vous n’avez pas fourni de message lors de la mise à jour.
+- Pour la renseigner, il existe deux méthodes :
 
-# Faire un rollback
+#### 1. Avec l’annotation `kubernetes.io/change-cause`
+Ajoutez-la dans votre manifeste YAML :
+```yaml
+metadata:
+  annotations:
+    kubernetes.io/change-cause: "Upgrade vers nginx:1.27"
+```
+Puis appliquez le fichier :
+```
+$ kubectl apply -f deployment.yaml
+```
+
+#### 2. Via la ligne de commande
+```
+$ kubectl annotate deployment my-app kubernetes.io/change-cause="Upgrade vers nginx:1.27"
+```
+
+Exemple complet d’historique :
+
+```
+$ kubectl rollout history deployment/my-app
+deployment.apps/my-app 
+REVISION  CHANGE-CAUSE
+1         Création initiale
+2         Upgrade vers nginx:1.27
+```
+
+👉 Cette pratique est fortement conseillée pour garder une **traçabilité claire** des déploiements effectués par l’équipe.
+
+***
+
+### Observer le comportement sous le capot
+
+Un Deployment utilise des **ReplicaSets**, qui eux-mêmes gèrent les Pods.
+
+- Quand vous créez un Deployment avec 5 replicas : → 1 ReplicaSet de 5 Pods.
+- Quand vous mettez à jour : Kubernetes crée un **nouveau ReplicaSet** pour la nouvelle version.
+- Pendant un rolling update :
+  - ancien ReplicaSet ↓ progressivement
+  - nouveau ReplicaSet ↑ progressivement
+
+```
+$ kubectl get rs
+```
+
+Vous verrez ainsi deux ReplicaSets : un qui diminue en taille, et un autre qui monte en charge.
+
+***
+
+### Faire un rollback
+
+Si une nouvelle version pose problème, vous pouvez restaurer une version stable.
+
+**Rollback simple (vers la version précédente) :**
+```
 $ kubectl rollout undo deployment/my-app
+```
+
+**Rollback vers une révision spécifique :**
+```
+$ kubectl rollout undo deployment/my-webapp --to-revision=3
 ```
 
 ***
 
-## Résumé concis (essentiel)
+### Explorer l’historique
 
-- Un **Deployment** génère des **rollouts** et des révisions (Revision 1, Revision 2, etc.).
-- Deux stratégies de mise à jour :
-    - **Recreate** : tous les Pods sont supprimés, puis recréés (temps d’indisponibilité).
-    - **RollingUpdate** (par défaut) : remplacement progressif des Pods (zéro downtime).
-- Pour mettre à jour : soit modifier le manifeste (`kubectl apply`), soit changer l’image (`kubectl set image`).
-- Kubernetes crée automatiquement un nouveau **ReplicaSet** lors d’une mise à jour.
-- En cas d’échec, on peut revenir en arrière avec `kubectl rollout undo`.
-
-***
-
-### Afficher toutes les versions (révisions)
-
-Pour lister les révisions disponibles d’un Deployment :
+Afficher toutes les révisions :
 ```
 $ kubectl rollout history deployment/my-webapp
 ```
-Cela affiche la liste des révisions disponibles avec leur numéro (`REVISION`).  
-Pour obtenir les détails d’une révision particulière :
+
+Voir le détail d’une révision (contenu du template Pod généré) :
 ```
 $ kubectl rollout history deployment/my-webapp --revision=4
 ```
-Cela montrera le contenu du Pod template et les modifications apportées lors de cette révision.
 
 ***
 
-### Faire un "undo" vers une version spécifique
-
-Par défaut, un rollback revient à la dernière version stable (l’avant-dernière révision).  
-Pour choisir une révision précise, utilisez l’option `--to-revision` :
+### Résumé des commandes essentielles
 
 ```
-$ kubectl rollout undo deployment/my-webapp --to-revision=3
-```
-Cette commande restaurera l’état du Deployment à la révision numéro 3 (ou le numéro que tu veux).
+# Créer un Deployment
+kubectl create -f deployment.yaml
 
-***
+# Lister les Deployments
+kubectl get deployments
 
-### Remarques
+# Mettre à jour un Deployment (YAML)
+kubectl apply -f deployment.yaml
 
-- Le champ `CHANGE-CAUSE` peut être vide si tu n’as pas utilisé l’annotation `kubernetes.io/change-cause` lors de tes mises à jour.
-- N’oublie pas que le nombre de révisions conservées dépend du paramètre `revisionHistoryLimit` du Deployment (par défaut : 10).
-- Les commandes sont valables pour tous les objets compatibles rollout (Deployment, DaemonSet, StatefulSet).
+# Mettre à jour une image directement
+kubectl set image deployment/my-app my-container=nginx:1.27
 
-```
-$ kubectl rollout history deployment/frontend
-deployment.apps/frontend 
-REVISION  CHANGE-CAUSE
-1         <none>
+# Suivre un rollout
+kubectl rollout status deployment/my-app
 
-$ kubectl set image deployment/frontend simple-webapp=nginx:1.30 --record
-Flag --record has been deprecated, --record will be removed in the future
-deployment.apps/frontend image updated
+# Consulter l’historique des rollouts
+kubectl rollout history deployment/my-app
 
-$ kubectl rollout history deployment/frontend
-deployment.apps/frontend 
-REVISION  CHANGE-CAUSE
-1         <none>
-2         kubectl set image deployment/frontend simple-webapp=nginx:1.30 --record=true
+# Annoter un déploiement avec une cause de changement
+kubectl annotate deployment my-app kubernetes.io/change-cause="Upgrade nginx:1.27"
+
+# Faire un rollback
+kubectl rollout undo deployment/my-app
+
+# Rollback vers une version spécifique
+kubectl rollout undo deployment/my-app --to-revision=2
 ```
 
 ***
 
-**Exemples pour manipuler l’historique et faire un rollback ciblé :**
-```
-# Lister toutes les révisions
-$ kubectl rollout history deployment/my-webapp
+### Points clés à retenir
 
-# Afficher une révision particulière
-$ kubectl rollout history deployment/my-webapp --revision=3
-
-# Rollback vers une révision spécifique
-$ kubectl rollout undo deployment/my-webapp --to-revision=3
-```
+- Un **Deployment** gère les mises à jour via des **rollouts** (Révision 1, 2, 3…).
+- Stratégies disponibles :
+  - **Recreate** → downtime garanti.
+  - **RollingUpdate** (par défaut) → mise à jour progressive sans interruption.
+- Kubernetes gère automatiquement les **ReplicaSets** derrière chaque version.
+- Vous pouvez suivre le déploiement et **revenir à une version précédente** en cas de problème.
+- Ajoutez toujours un **CHANGE-CAUSE** pour documenter vos mises à jour et garder une traçabilité claire.
