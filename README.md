@@ -48,6 +48,7 @@
    1. [Exercice](pod-desing/rollingUpdates-rollbacks-deployment/exercices/README.md)
 7. **[Jobs](pod-desing/jobs/README.md)**
 8. **[CronJob](pod-desing/cronJob/README.md)**
+   1. [Exercice](pod-desing/cronJob/exercices/README.md)
 
 ## (TODO) Service mesh Istio Kubernetes
 

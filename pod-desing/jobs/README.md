@@ -137,10 +137,48 @@ Cela crée jusqu’à 2 Pods en même temps, jusqu’à ce que 3 Pods aient term
 
 ***
 
-## Différence entre Job et ReplicaSet
+### Différence entre Job et ReplicaSet
 
 - Un **ReplicaSet** maintient un nombre fixe de Pods en fonctionnement **en continu** pour assurer la disponibilité de l’application (par exemple 3 serveurs web toujours actifs).
 - Un **Job** exécute un ou plusieurs Pods destinés à faire une tâche ponctuelle et à s’arrêter une fois terminée.
+
+***
+
+### backoffLimit
+
+Voici un exemple YAML de Job Kubernetes où la propriété `backoffLimit` est essentielle pour contrôler le nombre de tentatives de relance en cas d’échec, afin d’éviter des relances infinies nuisibles au cluster et aux ressources.
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: example-backofflimit-job
+spec:
+  backoffLimit: 3           # Kubernetes réessaiera 3 fois au maximum en cas d’échec
+  template:
+    spec:
+      containers:
+      - name: fail-test
+        image: busybox
+        command: ["sh", "-c", "exit 1"]  # Ce container échoue toujours volontairement
+      restartPolicy: Never
+```
+
+### Explications
+
+- Le container retourne un code de sortie `1`, ce qui est une erreur.
+- Kubernetes lancera initialement un Pod, qui échouera.
+- Le Job créera automatiquement **jusqu’à 3 nouveaux Pods** (nombre défini par `backoffLimit`) pour retenter la tâche.
+- Après 3 échecs, le Job est marqué comme **Failed** et aucun nouveau Pod ne sera créé.
+- Cela évite des boucles infinies de Pods échoués et l’utilisation excessive des ressources.
+
+Voici comment vérifier l’état du Job :
+
+```
+kubectl get jobs example-backofflimit-job
+kubectl describe job example-backofflimit-job
+kubectl get pods -l job-name=example-backofflimit-job
+```
 
 ***
 
