@@ -50,5 +50,10 @@
 8. **[CronJob](pod-desing/cronJob/README.md)**
    1. [Exercice](pod-desing/cronJob/exercices/README.md)
 
+## Service & Networking
+1. **[NodePort](services/nodePort/README.md)**
+2. **[ClusterIp](services/clusterIp/README.md)**
+
 ## (TODO) Service mesh Istio Kubernetes
+## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
 
