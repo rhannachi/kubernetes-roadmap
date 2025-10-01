@@ -42,11 +42,12 @@
 1. **[Readiness probe](observability/readiness-liveness/README-readiness.md)**
 2. **[Liveness probe](observability/readiness-liveness/README-liveness.md)**
 3. **[Logging](observability/logging/README.md)**
-4. **[Logging](observability/monitoring/README.md)**
+4. **[Monitoring](observability/monitoring/README.md)**
 5. **[Labels, Selectors and Annotations](pod-desing/labels-selectors-annotations/README.md)**
 6. **[RollingUpdates Rollbacks Deployment](pod-desing/rollingUpdates-rollbacks-deployment/README.md)**
    1. [Exercice](pod-desing/rollingUpdates-rollbacks-deployment/exercices/README.md)
-
+7. **[Jobs](pod-desing/jobs/README.md)**
+8. **[CronJob](pod-desing/cronJob/README.md)**
 
 ## (TODO) Service mesh Istio Kubernetes
 
