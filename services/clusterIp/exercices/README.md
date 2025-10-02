@@ -1,4 +1,63 @@
-# TODO
+
+# Exercice : Déploiement d’une architecture multi-tier Kubernetes avec Pods, Services et Nodes
+
+## Objectif
+
+Mettre en place dans un cluster Kubernetes une architecture simple reposant sur 3 types de Pods (front-end, back-end et base de données simulée)\
+déployés sur différentes nodes selon leur rôle, et exposer ces Pods via différents types de Services (ClusterIP, NodePort, LoadBalancer).
+
+## Contexte
+
+Vous disposez d’un cluster Kubernetes composé de plusieurs nodes étiquetés par rôle : front, back, db. Vous allez déployer trois Pods, chacun affecté selon leur rôle à un node spécifique via `nodeSelector`.
+- `front-pod` : pod front-end, conteneur Alpine avec un serveur HTTP simple (netcat sur port 80)
+- `back-pod` : pod back-end, conteneur Alpine avec serveur HTTP (netcat sur port 8080)
+- `db-pod` : pod base de données simulée, serveur HTTP (netcat sur port 9090)
+
+Ensuite, vous exposerez ces Pods via des Services Kubernetes adaptés à chaque besoin :
+- `back-service` de type **ClusterIP** exposant `back-pod` sur le port 80 (redirige vers 8080 du Pod)
+- `db-service` de type **NodePort** exposant `db-pod` sur le port 9090, accessible via `nodePort` 31090
+- `front-service` de type **LoadBalancer** exposant `front-pod` sur le port 80
+
+- Tester la communication :
+    - Accéder au back-end via le service clusterIP : `curl http://back-service:80` depuis un Pod du cluster.
+    - Accéder au db-service via le NodePort depuis l’extérieur : `curl http://$(minikube ip):31090`.
+    - Accéder au front-service via le load balancer (minikube tunnel) : `curl $(minikube service front-service --url)`.
+
+***
+
+# Solution :
+
+```
++--------------------------------------------------------+
+|                       Kubernetes Cluster               |
+|                                                        |
+|  +----------------+    +----------------+    +----------------+    Node (role: front)   
+|  |   front-pod    |    |   back-pod     |    |    db-pod      |    Node (role: back)    
+|  | container:     |    | container:     |    | container:     |    Node (role: db)      
+|  | alpine:latest  |    | alpine:latest  |    | alpine:latest  |                         
+|  |                |    | (nc :8080 http)|    | (nc :9090 http)|                         
+|  +-------+--------+    +--------+-------+    +---------+------+                         
+|          |                      |                      |                                
+|          |                      |                      |                                
+|          |                      |                      |                                
+|          |                      |                      |
+|          |                 (ClusterIP)                 |         
+|          |                 back-service                |                                
+|          |       port 80 => targetPort (port) 8080     |
+|          |           curl http://back-service          |
+|          |                                             |
+|          |                                          (NodePort)                           
+|          |                                          db-service 
+|          |                            nodePort 31090  => targetPort (pod) 9090
+|          |                               curl http://$(minikube ip):31090
+|          |
+|   (LoadBalancer)                                                                                  
+|   front-service                           
+|   port 80 => targetPort (pod) 80
+|   curl $(minikube service front-service --url)
+|                                                                                          
++--------------------------------------------------------+
+```
 
 ```yaml
 ---
@@ -15,8 +74,12 @@ spec:
   containers:
     - name: front-container
       image: alpine:latest
-      command: ["sleep", "3600"]
-      # curl est dans alpine, on pourra tester via kubectl exec
+      command:
+        - sh
+        - -c
+        - |
+          apk add --no-cache netcat-openbsd && \
+          while true; do echo -e "HTTP/1.1 200 OK\n\nHello from Front-end" | nc -l -p 80; done
 
 ---
 # Pod Back-end avec serveur HTTP simple (alpine avec nc)
@@ -70,6 +133,7 @@ spec:
   type: ClusterIP
   selector:
     app: back
+  # 80 (port) => 8080 (targetPort)
   ports:
     - port: 80
       targetPort: 8080
@@ -83,6 +147,7 @@ spec:
   type: NodePort
   selector:
     app: db
+  # 31090 => 9090 (port) => 9090 (targetPort) 
   ports:
     - port: 9090
       targetPort: 9090
@@ -97,6 +162,7 @@ spec:
   type: LoadBalancer
   selector:
     app: front
+  # 80 (port) => 80 (targetPort)
   ports:
     - port: 80
       targetPort: 80
@@ -240,7 +306,7 @@ curl $(minikube service front-service --url)
 ```
 **Résultat attendu :**
 ```
-# Pas de réponse spécifique car le pod front est passif (sleep)
+Hello from Front-end
 ```
 Tu peux vérifier que la commande `minikube service front-service` ouvre ou affiche bien l’URL sans erreur.
 
