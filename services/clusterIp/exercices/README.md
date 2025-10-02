@@ -329,3 +329,63 @@ Tu peux vérifier que la commande `minikube service front-service` ouvre ou affi
 | LoadBalancer| front-service      | minikube service + curl | Accès URL sans erreur     | Excellent si URL accessible      |
 
 
+***
+
+### Analyse de la commande `kubectl describe service back-service`
+
+``` 
+$ kubectl describe service back-service
+Name:                     back-service
+Namespace:                default
+Labels:                   <none>
+Annotations:              <none>
+Selector:                 app=back
+Type:                     ClusterIP
+IP Family Policy:         SingleStack
+IP Families:              IPv4
+IP:                       10.98.74.102
+IPs:                      10.98.74.102
+Port:                     <unset>  80/TCP
+TargetPort:               8080/TCP
+Endpoints:                10.244.2.4:8080
+Session Affinity:         None
+Internal Traffic Policy:  Cluster
+Events:                   <none>
+
+$ kubectl get pod -o wide
+NAME        READY   STATUS    RESTARTS   AGE   IP           NODE           NOMINATED NODE   READINESS GATES
+back-pod    1/1     Running   0          58s   10.244.2.4   minikube-m03   <none>           <none>
+db-pod      1/1     Running   0          58s   10.244.3.5   minikube-m04   <none>           <none>
+front-pod   1/1     Running   0          59s   10.244.1.5   minikube-m02   <none>           <none>
+```
+
+- Le service `back-service` est de type **ClusterIP** avec une adresse IP interne : `10.98.74.102`.
+- Il écoute sur le port 80 et redirige vers le `targetPort` 8080 des pods ciblés.
+- Le sélecteur du service est `app=back`, ce qui signifie qu'il cible les Pods ayant ce label.
+- Sous la ligne **Endpoints**, on voit `10.244.2.4:8080`.
+
+### Analyse de la commande `kubectl get pod -o wide`
+
+- Le pod `back-pod` a l'IP `10.244.2.4` et tourne sur le node `minikube-m03`.
+- Les autres pods (db-pod, front-pod) ont des IP différentes, mais ne sont pas ciblés par ce service, car ils ont d'autres labels (`app=db`, `app=front`).
+
+***
+
+### Signification des Endpoints en Kubernetes
+
+- L'**Endpoint** dans le contexte d'un Service Kubernetes est l'adresse IP (et port) des Pods derrière ce service.
+- Kubernetes crée automatiquement une ressource appelée **Endpoints** (ou **EndpointSlices** dans les versions récentes), qui liste les IPs et ports des Pods qui correspondent au `selector` du Service.
+- Ici, `back-service` pointe vers l'adresse `10.244.2.4:8080`, qui est l’IP et port du pod `back-pod`.
+- Quand un client envoie une requête à `back-service` (via l’IP 10.98.74.102:80), Kubernetes, avec l’aide de `kube-proxy`, redirige ce trafic vers l’un des endpoints réels (ici 10.244.2.4:8080).
+
+***
+
+### En résumé
+
+| Élément           | Description                                                 |
+|-------------------|-------------------------------------------------------------|
+| Service back-service | Objet stable avec IP virtuelle (ClusterIP) exposant le backend |
+| Selector          | Filtre qui associe le service aux pods avec label `app=back` |
+| Endpoints         | Liste des IPs et ports des Pods correspondant au service (ici `10.244.2.4:8080`) |
+| Pod back-pod      | Pod ciblé par le service, avec l'IP `10.244.2.4`             |
+| kube-proxy        | Proxy réseau sur chaque Node qui route le trafic vers les Endpoints |
