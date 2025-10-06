@@ -1,4 +1,4 @@
-# Network Policies dans Kubernetes
+# Network Policy Kubernetes
 
 ### Introduction
 Avant d’aborder les **Network Policies**, il est essentiel de comprendre les notions de base concernant le trafic réseau et la sécurité.\
@@ -145,10 +145,3 @@ spec:
 - Par défaut, dans Kubernetes, tous les Pods communiquent librement.
 - Le trafic se distingue en **ingress** (entrant) et **egress** (sortant).
 - Une **NetworkPolicy** permet de restreindre ce trafic entre Pods via **labels** et **selectors**.
-- Exemple typique : autoriser uniquement l’API server à accéder à la database.
-- Les **NetworkPolicies** dépendent du CNI utilisé (inopérant avec Flannel).
-
-Exemple YAML :
-- `policyTypes: Ingress`
-- `podSelector: role=db`
-- Autorisation uniquement depuis Pods `role=api` vers port `3306`.

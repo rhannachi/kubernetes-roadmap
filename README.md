@@ -54,7 +54,10 @@
 1. **[NodePort](services/nodePort/README.md)**
 2. **[ClusterIp](services/clusterIp/README.md)**
    1. [Exercice](services/clusterIp/exercices/README.md)
-3. **[Network Policies](services/networkPolicies/README.md)**
+3. **NetworkPolicy**
+   1. **[NetworkPolicy Introduction](services/networkPolicy/README.md)**
+   2. **[Exercice](services/networkPolicy/exercices/README.md)**
+   3. **[NetworkPolicy Ingress/Egress](services/networkPolicy/README-2.md)**
 
 ## (TODO) Service mesh Istio Kubernetes
 ## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)

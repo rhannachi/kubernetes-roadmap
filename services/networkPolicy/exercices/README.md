@@ -122,12 +122,12 @@ spec:
 
 Grâce à cette règle, le pod `web-server` n’aura plus accès au service de base de données, tandis que le pod `api-server` conservera l’accès.
 
-```bash
-kubectl logs api-server
+```
+$ kubectl logs api-server
 OK
 ```
-```bash
-kubectl logs web-server
+```
+$ kubectl logs web-server
 KO
 ```
 
