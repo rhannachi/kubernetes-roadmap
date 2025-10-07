@@ -278,15 +278,27 @@ kubectl describe ingress ingress-web-apps -n web-apps
 ### 🔍 Commandes :
 
 ```bash
-kubectl run curlpod --image=curlimages/curl -it --rm -n web-apps -- \
-  curl http://svc-ingress-nginx-controller.web-apps.svc.cluster.local/red
+kubectl exec -n web-apps -it deploy/deploy-web-red -- curl -v http://svc-ingress-nginx-controller.web-apps.svc.cluster.local/red
 ```
 
-### 🧠 Explication :
+👉 (et pour tester l’autre application)
 
-* Lancer un pod temporaire (`curlpod`) dans le même namespace.
-* Tester le chemin `/red` ou `/blue`.
-* Tu devrais obtenir :
+```bash
+kubectl exec -n web-apps -it deploy/deploy-web-blue -- curl -v http://svc-ingress-nginx-controller.web-apps.svc.cluster.local/blue
+```
+
+---
+
+### 🧠 Explication pédagogique :
+
+* Cette commande exécute `curl` **à l’intérieur d’un pod déjà existant** (`web-red` ou `web-blue`).
+* Cela permet de tester la **connectivité réseau interne** sans créer de pod temporaire (ce qui évite les erreurs de timeout que tu avais eues avec `kubectl run`).
+* On vérifie que le pod peut joindre le **Service du contrôleur NGINX** via son nom DNS interne :
+
+  ```
+  svc-ingress-nginx-controller.web-apps.svc.cluster.local
+  ```
+* En retour, tu devrais obtenir une réponse HTTP `200 OK` contenant :
 
   ```
   <h1>RED APP</h1>
@@ -297,38 +309,94 @@ kubectl run curlpod --image=curlimages/curl -it --rm -n web-apps -- \
   ```
   <h1>BLUE APP</h1>
   ```
+* Cela confirme que :
 
-### 💡 Si tu obtiens une erreur 404 :
-
-* Vérifie la règle `nginx.ingress.kubernetes.io/rewrite-target`.
-* Vérifie que le contrôleur NGINX voit bien l’Ingress (via ses logs).
+    * Le **DNS interne** de Kubernetes fonctionne,
+    * Le **Service NGINX** est accessible depuis d’autres pods du cluster,
+    * Le **routage Ingress** redirige bien les requêtes vers le bon backend.
 
 ---
 
-## 🌎 13. Tester l’accès externe (depuis ta machine)
+### 💡 En cas d’erreur
+
+Si la commande renvoie une erreur du type :
+
+```
+curl: (7) Failed to connect to ...
+```
+
+alors :
+
+1. Vérifie que le Service du contrôleur est bien créé :
+
+   ```bash
+   kubectl get svc -n web-apps
+   ```
+2. Vérifie que le pod du contrôleur est en **Running** :
+
+   ```bash
+   kubectl get pods -n web-apps -l app=ingress-nginx-controller
+   ```
+3. Et consulte les logs :
+
+   ```bash
+   kubectl logs deploy/deploy-ingress-nginx-controller -n web-apps
+   ```
+
+---
+
+Voici la version **mise à jour et conforme à Minikube**, qui simplifie l’accès externe en utilisant la commande `minikube service --url` au lieu de chercher manuellement le NodePort :
+
+---
+
+## 🌎 13. Tester l’accès externe (depuis ta machine avec Minikube)
 
 ### 🔍 Commande :
 
-```bash
-kubectl get svc svc-ingress-nginx-controller -n web-apps
-```
-
-➡️ Note le `NODE-PORT` (ex : 30080)
-
-### Puis :
+Pour récupérer l’URL d’accès externe au service NGINX :
 
 ```bash
-curl http://<NODE_IP>:<NODE_PORT>/red
-curl http://<NODE_IP>:<NODE_PORT>/blue
+minikube service svc-ingress-nginx-controller -n web-apps --url
 ```
 
-### 🧠 Explication :
+Exemple de sortie :
 
-* Permet de tester le flux complet depuis ton poste jusqu’aux pods.
-* Si cela échoue :
+```
+http://192.168.49.2:31811
+http://192.168.49.2:32021
+```
 
-    * Vérifie que tu peux atteindre le nœud (`ping <NODE_IP>`).
-    * Vérifie qu’aucun pare-feu ne bloque le NodePort.
+---
+
+### 🔍 Tester les applications :
+
+```bash
+curl http://192.168.49.2:31811/red
+curl http://192.168.49.2:31811/blue
+```
+
+⚠️ Note :
+
+* L’une des URL correspond au port HTTP (`80`) et l’autre au port HTTPS (`443`).
+* Pour HTTPS, tu peux rencontrer un avertissement de certificat auto-signé :
+
+```bash
+curl -k https://192.168.49.2:32021/red
+```
+
+Le `-k` permet d’ignorer le certificat auto-signé dans un cluster Minikube.
+
+---
+
+### 🧠 Explication pédagogique :
+
+* Cette méthode teste **le chemin complet depuis ton poste jusqu’aux pods** via le NodePort exposé par Minikube.
+* Elle remplace le besoin de connaître manuellement le NodePort ou l’IP du nœud.
+* Cela vérifie :
+
+    * Le Service `svc-ingress-nginx-controller` est accessible depuis l’extérieur,
+    * Le routage Ingress fonctionne (`/red` → web-red, `/blue` → web-blue),
+    * Les pods backend répondent correctement.
 
 ---
 
@@ -375,191 +443,4 @@ kubectl delete ns web-apps
 | 5     | Ingress    | `kubectl describe ingress`                         | Règles bien appliquées      |
 | 6     | Routage    | `kubectl run curlpod ...`                          | Trafic interne OK           |
 | 7     | Externe    | `curl http://<NODE_IP>:<NODE_PORT>`                | Accès utilisateur OK        |
-
-***
-***
-
-# 🧩 Kubernetes Ingress NGINX – Diagnostic Guide
-
-## 0️⃣ Préambule : contexte et namespace
-
-```bash
-# Lister tous les namespaces
-kubectl get ns
-
-# Si le namespace web-apps n’existe pas → rien ne fonctionnera
-kubectl describe ns web-apps
-```
-
----
-
-## 1️⃣ Vérification de la base RBAC
-
-```bash
-# Vérifie que les rôles sont présents
-kubectl get clusterrole cr-ingress-nginx-controller
-kubectl get clusterrolebinding crb-ingress-nginx-controller
-
-# Vérifie le lien entre le ServiceAccount et le ClusterRole
-kubectl describe clusterrolebinding crb-ingress-nginx-controller
-```
-
-🧠 *Si le ServiceAccount n’est pas référencé ici → le contrôleur NGINX n’aura pas accès aux Ingress.*
-
----
-
-## 2️⃣ Vérifier le ServiceAccount du contrôleur
-
-```bash
-kubectl get sa -n web-apps
-kubectl describe sa sa-ingress-nginx-controller -n web-apps
-```
-
-🧠 *Il doit exister et être associé à ton déploiement `deploy-ingress-nginx-controller`.*
-
----
-
-## 3️⃣ Vérifier la configuration du contrôleur
-
-```bash
-# Vérifie le ConfigMap (paramètres NGINX)
-kubectl get configmap -n web-apps
-kubectl describe configmap ingress-nginx-config -n web-apps
-
-# Vérifie la classe Ingress utilisée
-kubectl get ingressclass
-kubectl describe ingressclass ingress-nginx-class
-```
-
-🧠 *Si le `ingressClassName` de ton Ingress ne correspond pas à la classe du contrôleur → NGINX ignorera ton Ingress.*
-
----
-
-## 4️⃣ Vérifier le déploiement du contrôleur Ingress NGINX
-
-```bash
-# Vérifie que le déploiement existe
-kubectl get deploy -n web-apps
-
-# Vérifie qu’il est en cours d’exécution
-kubectl describe deploy deploy-ingress-nginx-controller -n web-apps
-
-# Vérifie le pod associé
-kubectl get pods -n web-apps -l app=ingress-nginx-controller
-
-# Si un pod est en erreur :
-kubectl describe pod <nom-du-pod> -n web-apps
-kubectl logs <nom-du-pod> -n web-apps
-```
-
-🧠 *Les logs du contrôleur sont essentiels — ils montrent s’il détecte les Ingress, s’il a des erreurs de config, etc.*
-
----
-
-## 5️⃣ Vérifier le Service du contrôleur (exposition)
-
-```bash
-kubectl get svc -n web-apps
-kubectl describe svc svc-ingress-nginx-controller -n web-apps
-```
-
-🧠 *Type attendu : NodePort (pour exposer vers l’extérieur).
-Vérifie que le selector `app=ingress-nginx-controller` correspond bien à ton pod.*
-
----
-
-## 6️⃣ Vérifier les applications backend
-
-```bash
-# Vérifie les déploiements
-kubectl get deploy -n web-apps
-kubectl describe deploy deploy-web-red -n web-apps
-kubectl describe deploy deploy-web-blue -n web-apps
-
-# Vérifie les pods correspondants
-kubectl get pods -n web-apps --show-labels
-kubectl logs -n web-apps -l app=web-red
-kubectl logs -n web-apps -l app=web-blue
-```
-
-🧠 *Si un déploiement est "0/1 READY", il y a un souci d’image ou de démarrage.*
-
----
-
-## 7️⃣ Vérifier les Services backend
-
-```bash
-kubectl get svc -n web-apps
-kubectl describe svc svc-web-red -n web-apps
-kubectl describe svc svc-web-blue -n web-apps
-
-# Vérifie si le service pointe vers des endpoints valides
-kubectl get endpoints svc-web-red -n web-apps
-kubectl get endpoints svc-web-blue -n web-apps
-```
-
-🧠 *Si un endpoint est vide → le Service ne trouve aucun pod → problème de label (selector).*
-
----
-
-## 8️⃣ Vérifier l’Ingress
-
-```bash
-kubectl get ingress -n web-apps
-kubectl describe ingress ingress-web-apps -n web-apps
-```
-
-🧠 *L’adresse (ADDRESS) doit être renseignée, et les règles `/red` et `/blue` doivent pointer vers les bons Services.*
-
----
-
-## 9️⃣ Tester le routage interne (depuis le cluster)
-
-```bash
-# Lance un pod temporaire avec curl
-kubectl run curlpod --image=curlimages/curl -it --rm -n web-apps -- \
-  curl -v http://svc-ingress-nginx-controller.web-apps.svc.cluster.local/red
-
-kubectl run curlpod --image=curlimages/curl -it --rm -n web-apps -- \
-  curl -v http://svc-ingress-nginx-controller.web-apps.svc.cluster.local/blue
-```
-
-🧠 *Si tu obtiens `<h1>RED APP</h1>` ou `<h1>BLUE APP</h1>`, le routage interne fonctionne parfaitement.*
-
----
-
-## 🔟 Tester le routage externe (depuis ta machine)
-
-```bash
-kubectl get svc svc-ingress-nginx-controller -n web-apps
-```
-
-➡️ Note le **NODE-PORT** (ex : 30080)
-
-Puis :
-
-```bash
-curl http://<NODE_IP>:<NODE_PORT>/red
-curl http://<NODE_IP>:<NODE_PORT>/blue
-```
-
-🧠 *Si cela échoue → vérifie le firewall ou le NodePort.*
-
----
-
-## 1️⃣1️⃣ Résumé visuel du namespace
-
-```bash
-kubectl get all -n web-apps
-```
-
-🧠 *Vue d’ensemble rapide de tous les objets et de leur état (Pods, Services, Ingress…).*
-
----
-
-## 1️⃣2️⃣ Nettoyage (facultatif)
-
-```bash
-kubectl delete ns web-apps
-```
 
