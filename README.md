@@ -58,6 +58,10 @@
    1. **[NetworkPolicy Introduction](services/networkPolicy/README.md)**
    2. **[Exercice](services/networkPolicy/exercices/README.md)**
    3. **[NetworkPolicy Ingress/Egress](services/networkPolicy/README-2.md)**
+4. **[Ingress Networking](services/ingress-networking/README.md)**
+   1. **[Exercice](services/ingress-networking/examples/README.md)**
+   2. **[Exercice](services/ingress-networking/examples/README-DIAGNOSTIC.md)**
+
 
 ## (TODO) Service mesh Istio Kubernetes
 ## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)

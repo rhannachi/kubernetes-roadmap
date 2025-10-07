@@ -1,0 +1,338 @@
+# -------------------------------
+# 🧩 1. Namespace : Isolation logique
+# -------------------------------
+# Tous les objets (pods, services, ingress...) seront créés
+# dans le namespace "web-apps" pour éviter les conflits avec d'autres projets.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: web-apps
+
+---
+
+# -------------------------------
+# ⚙️ 2. ConfigMap : Configuration du contrôleur Ingress NGINX
+# -------------------------------
+# Ce ConfigMap est référencé par le contrôleur NGINX.
+# Il peut contenir des paramètres comme les timeouts, les logs, la taille max de requêtes, etc.
+# (Ici, il est vide, donc la configuration par défaut de NGINX s’applique.)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-config
+  namespace: web-apps
+data: {}
+
+---
+
+# -------------------------------
+# 🧭 3. IngressClass : Type d'Ingress pris en charge
+# -------------------------------
+# Déclare que le contrôleur "ingress-nginx" est celui qui gérera
+# les ressources Ingress de type "ingress-nginx-class".
+# Cela évite les conflits si plusieurs contrôleurs Ingress existent dans le cluster.
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: ingress-nginx-class
+spec:
+  controller: k8s.io/ingress-nginx
+
+---
+
+# -------------------------------
+# 👤 4. ServiceAccount : Identité du contrôleur Ingress
+# -------------------------------
+# Le contrôleur Ingress NGINX utilise ce compte de service
+# pour s’authentifier auprès de l’API Kubernetes et regarder les ressources (Ingress, Services...).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-ingress-nginx-controller
+  namespace: web-apps
+
+---
+
+# -------------------------------
+# 🔐 5. ClusterRole : Autorisations globales pour le contrôleur
+# -------------------------------
+# Définit les permissions dont le contrôleur a besoin pour fonctionner :
+# - Lire les Services, Pods, Endpoints...
+# - Observer les Ingress pour configurer NGINX dynamiquement
+# - Créer des événements, gérer les leases (élection de leader)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cr-ingress-nginx-controller
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "endpoints", "endpointslices", "nodes", "pods", "secrets", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "ingressclasses", "ingresses/status"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
+
+# -------------------------------
+# 🔗 6. ClusterRoleBinding : Liaison entre ServiceAccount et ClusterRole
+# -------------------------------
+# Relie le ServiceAccount (identité du contrôleur)
+# au ClusterRole (permissions globales).
+# ➜ Cela permet au pod du contrôleur NGINX de lire les ressources du cluster.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crb-ingress-nginx-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cr-ingress-nginx-controller
+subjects:
+  - kind: ServiceAccount
+    name: sa-ingress-nginx-controller
+    namespace: web-apps
+
+---
+
+# -------------------------------
+# 🚀 7. Deployment : Contrôleur Ingress NGINX
+# -------------------------------
+# C’est le composant central qui agit comme un reverse proxy.
+# Il observe les objets Ingress dans le cluster et configure automatiquement NGINX.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-ingress-nginx-controller
+  namespace: web-apps
+  labels:
+    app: ingress-nginx-controller
+spec:
+  replicas: 1  # Une seule instance suffit pour un petit cluster (sinon H/A possible)
+  selector:
+    matchLabels:
+      app: ingress-nginx-controller
+  template:
+    metadata:
+      labels:
+        app: ingress-nginx-controller
+    spec:
+      serviceAccountName: sa-ingress-nginx-controller
+      containers:
+        - name: nginx-controller
+          image: registry.k8s.io/ingress-nginx/controller:v1.9.0
+          args:
+            # Arguments de démarrage du contrôleur :
+            # - lie le service exposant NGINX
+            # - configure le leader election
+            # - associe la classe d’ingress
+            - /nginx-ingress-controller
+            - --publish-service=$(POD_NAMESPACE)/svc-ingress-nginx-controller
+            - --election-id=ingress-controller-leader
+            - --controller-class=k8s.io/ingress-nginx
+            - --ingress-class=ingress-nginx-class
+            - --configmap=$(POD_NAMESPACE)/ingress-nginx-config
+          env:
+            # Variables d’environnement injectées automatiquement
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          # Probes pour surveiller la santé du contrôleur
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+          securityContext:
+            runAsUser: 101
+            allowPrivilegeEscalation: false
+
+---
+
+# -------------------------------
+# 🌐 8. Service : Exposition du contrôleur NGINX
+# -------------------------------
+# Ce service de type NodePort rend NGINX accessible depuis les nœuds du cluster.
+# C’est la porte d’entrée vers les applications web (Ingress les dirige ensuite vers RED/BLUE).
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-ingress-nginx-controller
+  namespace: web-apps
+spec:
+  type: NodePort  # (ClusterIP en interne, NodePort pour accès externe)
+  selector:
+    app: ingress-nginx-controller
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+
+---
+
+# -------------------------------
+# 🔴 9. Deployment : Application "RED"
+# -------------------------------
+# Petit serveur NGINX qui affiche "RED APP"
+# Il sera exposé via un Service et routé par l’Ingress.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-red
+  namespace: web-apps
+  labels:
+    app: web-red
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-red
+  template:
+    metadata:
+      labels:
+        app: web-red
+    spec:
+      containers:
+        - name: nginx-web-red
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            # On remplace la page d'accueil NGINX par "RED APP"
+            - echo "<h1>RED APP</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+---
+
+# -------------------------------
+# 🔵 10. Deployment : Application "BLUE"
+# -------------------------------
+# Même principe que "RED", mais affiche "BLUE APP".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-blue
+  namespace: web-apps
+  labels:
+    app: web-blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-blue
+  template:
+    metadata:
+      labels:
+        app: web-blue
+    spec:
+      containers:
+        - name: nginx-web-blue
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>BLUE APP</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+---
+
+# -------------------------------
+# 🧩 11. Service : Expose le pod RED
+# -------------------------------
+# Lie le Service à l'application via le label `app: web-red`.
+# L’Ingress utilisera ce service comme backend pour /red.
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-red
+  namespace: web-apps
+spec:
+  selector:
+    app: web-red
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+
+# -------------------------------
+# 🧩 12. Service : Expose le pod BLUE
+# -------------------------------
+# Lie le Service à l'application via le label `app: web-blue`.
+# L’Ingress utilisera ce service comme backend pour /blue.
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-blue
+  namespace: web-apps
+spec:
+  selector:
+    app: web-blue
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+
+# -------------------------------
+# 🚦 13. Ingress : Routage HTTP
+# -------------------------------
+# L’objet clé qui connecte tout :
+# - Il observe les requêtes HTTP entrantes sur le contrôleur NGINX
+# - Et redirige vers le bon Service selon le chemin (/red ou /blue)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-web-apps
+  namespace: web-apps
+  annotations:
+    # Permet de réécrire le chemin d’accès pour que l’app reçoive la requête correcte.
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: ingress-nginx-class  # Correspond à l’IngressClass plus haut
+  rules:
+    - http:
+        paths:
+          # Toute requête vers /red ou /red/xxx → envoie au service RED
+          - path: /red(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-red
+                port:
+                  number: 80
+          # Toute requête vers /blue ou /blue/xxx → envoie au service BLUE
+          - path: /blue(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-blue
+                port:
+                  number: 80
