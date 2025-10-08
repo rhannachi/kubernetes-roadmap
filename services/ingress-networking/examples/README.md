@@ -2,6 +2,8 @@
 
 [deployment.yaml](deployment.yaml)
 
+#### Architecture du flux de fonctionnement
+
 ```  
                            🌐  UTILISATEUR / CLIENT HTTP
                                        │
@@ -56,6 +58,12 @@
 ───────────────────────────────────────────────────────────────────────────────
 
 ```
+
+***
+
+#### Architecture – Diagramme de dépendance des objets Kubernetes
+
+![architecture.png](architecture.png)
 
 ***
 
