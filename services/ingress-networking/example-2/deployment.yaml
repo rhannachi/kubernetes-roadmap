@@ -90,7 +90,7 @@ metadata:
   labels:
     app: ingress-nginx-controller
 spec:
-  replicas: 2                                # HA simple pour l'edge (prod-like)
+  replicas: 1                                # HA simple pour l'edge (prod-like)
   selector:
     matchLabels:
       app: ingress-nginx-controller

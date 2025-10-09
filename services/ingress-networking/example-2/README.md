@@ -1,3 +1,6 @@
+
+![architecture.jpg](architecture.jpg)
+
 ## Déployer & tester sur **minikube**
 
 1. Démarre minikube :
