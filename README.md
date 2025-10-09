@@ -59,8 +59,8 @@
    2. **[Exercice](services/networkPolicy/exercices/README.md)**
    3. **[NetworkPolicy Ingress/Egress](services/networkPolicy/README-2.md)**
 4. **[Ingress Networking](services/ingress-networking/README.md)**
-   1. **[Exercice](services/ingress-networking/examples/README.md)**
-   2. **[Exercice](services/ingress-networking/examples/README-DIAGNOSTIC.md)**
+   1. **[Exercice 1](services/ingress-networking/example-1/README.md)**
+   2. **[Exercice 2](services/ingress-networking/example-2/README.md)**
 
 
 ## (TODO) Service mesh Istio Kubernetes

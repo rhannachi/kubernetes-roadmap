@@ -65,8 +65,6 @@
 
 ![architecture.png](architecture.png)
 
-***
-
 ## 🚀 Comment utiliser cette architecture
 
 
@@ -85,6 +83,8 @@ $ curl -k http://192.168.49.2:32021/blue
 <h1>BLUE APP</h1>
  
 ```
+
+#### Pour faire un diagnostic manuel de la solution: [README-DIAGNOSTIC.md](README-DIAGNOSTIC.md)
 
 ***
 
