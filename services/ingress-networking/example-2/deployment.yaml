@@ -1,0 +1,400 @@
+# -------------------------------
+# IngressClass unique (edge)
+# -------------------------------
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: ingress-nginx-edge
+spec:
+  controller: k8s.io/ingress-nginx
+---
+# -------------------------------
+# ClusterRole (inchangé)
+# -------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cr-ingress-nginx-controller
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "endpoints", "endpointslices", "nodes", "pods", "secrets", "services"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "ingressclasses", "ingresses/status"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+# -------------------------------
+# ClusterRoleBinding -> lié au SA edge
+# -------------------------------
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: crb-ingress-nginx-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cr-ingress-nginx-controller
+subjects:
+  - kind: ServiceAccount
+    name: sa-ingress-nginx-controller
+    namespace: ingress-edge
+
+# -------------------------------
+# Namespace pour l'edge controller
+# -------------------------------
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-edge
+
+# -------------------------------
+# ConfigMap pour le controller (edge)
+# -------------------------------
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-config
+  namespace: ingress-edge
+data: {}
+
+# -------------------------------
+# ServiceAccount pour le controller (edge)
+# -------------------------------
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sa-ingress-nginx-controller
+  namespace: ingress-edge
+
+# -------------------------------
+# Deployment : Ingress NGINX edge (single controller)
+# -------------------------------
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-ingress-nginx-controller
+  namespace: ingress-edge
+  labels:
+    app: ingress-nginx-controller
+spec:
+  replicas: 2                                # HA simple pour l'edge (prod-like)
+  selector:
+    matchLabels:
+      app: ingress-nginx-controller
+  template:
+    metadata:
+      labels:
+        app: ingress-nginx-controller
+    spec:
+      serviceAccountName: sa-ingress-nginx-controller
+      containers:
+        - name: nginx-controller
+          image: registry.k8s.io/ingress-nginx/controller:v1.9.0
+          args:
+            - /nginx-ingress-controller
+            - --publish-service=$(POD_NAMESPACE)/svc-ingress-nginx-controller
+            - --election-id=ingress-controller-leader-edge
+            - --controller-class=k8s.io/ingress-nginx
+            - --ingress-class=ingress-nginx-edge
+            - --configmap=$(POD_NAMESPACE)/ingress-nginx-config
+            # NOTE: on ne met pas --watch-ingress-without-class=true
+            # pour forcer l'utilisation explicite d'ingressClassName
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+          securityContext:
+            runAsUser: 101
+            allowPrivilegeEscalation: false
+
+# -------------------------------
+# Service : expose l'edge controller (LoadBalancer pour minikube)
+# -------------------------------
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-ingress-nginx-controller
+  namespace: ingress-edge
+spec:
+  type: LoadBalancer    # minikube: utiliser `minikube tunnel` ou MetalLB pour obtenir une IP
+  selector:
+    app: ingress-nginx-controller
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+
+# -------------------------------
+# NAMESPACE APP1 (apps and services kept)
+# -------------------------------
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-red
+  namespace: app1
+  labels:
+    app: web-red
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-red
+  template:
+    metadata:
+      labels:
+        app: web-red
+    spec:
+      containers:
+        - name: nginx-web-red
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>RED APP (app1)</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-blue
+  namespace: app1
+  labels:
+    app: web-blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-blue
+  template:
+    metadata:
+      labels:
+        app: web-blue
+    spec:
+      containers:
+        - name: nginx-web-blue
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>BLUE APP (app1)</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-red
+  namespace: app1
+spec:
+  selector:
+    app: web-red
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-blue
+  namespace: app1
+spec:
+  selector:
+    app: web-blue
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+# Ingress pour app1 : routes sous /app1/*
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-app1
+  namespace: app1
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: ingress-nginx-edge
+  rules:
+    - http:
+        paths:
+          - path: /app1/red(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-red
+                port:
+                  number: 80
+          - path: /app1/blue(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-blue
+                port:
+                  number: 80
+
+# -------------------------------
+# NAMESPACE APP2 (apps and services kept)
+# -------------------------------
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-red
+  namespace: app2
+  labels:
+    app: web-red
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-red
+  template:
+    metadata:
+      labels:
+        app: web-red
+    spec:
+      containers:
+        - name: nginx-web-red
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>RED APP (app2)</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-blue
+  namespace: app2
+  labels:
+    app: web-blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-blue
+  template:
+    metadata:
+      labels:
+        app: web-blue
+    spec:
+      containers:
+        - name: nginx-web-blue
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>BLUE APP (app2)</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-red
+  namespace: app2
+spec:
+  selector:
+    app: web-red
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-blue
+  namespace: app2
+spec:
+  selector:
+    app: web-blue
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+# Ingress pour app2 : routes sous /app2/*
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-app2
+  namespace: app2
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: ingress-nginx-edge
+  rules:
+    - http:
+        paths:
+          - path: /app2/red(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-red
+                port:
+                  number: 80
+          - path: /app2/blue(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-blue
+                port:
+                  number: 80
