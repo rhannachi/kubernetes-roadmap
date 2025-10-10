@@ -62,6 +62,11 @@
    1. **[Exercice 1](services/ingress-networking/example-1/README.md)**
    2. **[Exercice 2](services/ingress-networking/example-2/README.md)**
 
+## Persistence
+1. **[Storage in Docker](persistence/storage-docker/README.md)**
+2. **[Volumes](persistence/volumes/README.md)**
+
+
 
 ## (TODO) Service mesh Istio Kubernetes
 ## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
