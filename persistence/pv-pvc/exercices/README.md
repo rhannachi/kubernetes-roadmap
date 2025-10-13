@@ -132,14 +132,14 @@ log-writer    1/1     Running   0          5s
 
 Entre dans le conteneur :
 
-```bash
-kubectl exec -it log-writer -- sh
+```
+$ kubectl exec -it log-writer -- sh
 ```
 
 Affiche le contenu :
 
-```bash
-cat /mnt/data/log.txt
+```
+$ cat /mnt/data/log.txt
 ```
 
 Tu devrais voir :
@@ -190,9 +190,9 @@ spec:
 
 **Commandes :**
 
-```bash
-kubectl apply -f log-reader.yaml
-kubectl logs log-reader
+```
+$ kubectl apply -f log-reader.yaml
+$ kubectl logs log-reader
 ```
 
 Tu verras les **lignes précédemment écrites par l’application** :
