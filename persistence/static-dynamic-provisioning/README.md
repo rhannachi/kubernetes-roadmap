@@ -1,8 +1,10 @@
 ## Provisionnement statique et dynamique des volumes persistants dans Kubernetes
 
-Dans cet exemple, nous créons un **PersistentVolumeClaim (PVC)** basé sur un disque persistant Google Cloud.\
+Dans cet exemple, nous créons un **PersistentVolumeClaim (PVC)** basé sur un disque persistant Google Cloud.
+
 Le problème de la méthode statique est qu’avant de créer le **PersistentVolume (PV)**, il faut préalablement créer manuellement le disque dans Google Cloud.\
 Chaque fois qu'une application a besoin de stockage, il faut d'abord provisionner manuellement ce disque, puis créer un fichier de définition de PV avec le même nom que celui du disque créé.\
+
 => C’est ce qu’on appelle le **provisionnement statique**.
 
 ### Exemple de provisionnement statique

@@ -68,6 +68,7 @@
    1. **[Exercice 1](persistence/pv-pvc/exercices/README.md)**
    2. **[Exercice 2](persistence/pv-pvc/exercices/README-exercice-2.md)**
 3. **[Provisioning Static/Dynamic](persistence/static-dynamic-provisioning/README.md)**
+   1. **[Exercice](persistence/static-dynamic-provisioning/exercices/README-exercice-1.md)**
 
 
 ## (TODO) Service mesh Istio Kubernetes
