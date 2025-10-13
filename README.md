@@ -66,7 +66,7 @@
 1. **[Storage in Docker](persistence/storage-docker/README.md)**
 2. **[Volumes](persistence/volumes/README.md)**
    1. **[Exercice](persistence/pv-pvc/exercices/README.md)**
-
+   2. **[Exercice](persistence/pv-pvc/exercices/README-exercice-2.md)**
 
 
 ## (TODO) Service mesh Istio Kubernetes
