@@ -74,7 +74,8 @@
    1. **[Exercice TODO](persistence/statefulset/exercices/README.md)**
 
 ## Security
-
+1. **[Authentification](security/authentification/README.md)**
+2. **[KubeConfig](security/kubeConfig/README.md)**
 
 ## (TODO) Service mesh Istio Kubernetes
 ## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
