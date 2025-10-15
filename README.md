@@ -65,10 +65,15 @@
 ## Persistence
 1. **[Storage in Docker](persistence/storage-docker/README.md)**
 2. **[Volumes](persistence/volumes/README.md)**
+3. **[PV & PVC](persistence/pv-pvc/README.md)**
    1. **[Exercice 1](persistence/pv-pvc/exercices/README.md)**
    2. **[Exercice 2](persistence/pv-pvc/exercices/README-exercice-2.md)**
-3. **[Provisioning Static/Dynamic](persistence/static-dynamic-provisioning/README.md)**
+4. **[Provisioning Static/Dynamic](persistence/static-dynamic-provisioning/README.md)**
    1. **[Exercice](persistence/static-dynamic-provisioning/exercices/README-exercice-1.md)**
+5. **[StatefulSet](persistence/statefulset/README.md)**
+   1. **[Exercice TODO](persistence/statefulset/exercices/README.md)**
+
+## Security
 
 
 ## (TODO) Service mesh Istio Kubernetes
