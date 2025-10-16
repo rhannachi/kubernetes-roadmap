@@ -242,8 +242,6 @@ L’authentification dans Kubernetes repose sur une logique simple mais puissant
 
 - Sur AWS EKS, l’authentification s’appuie sur IAM et l’authentificateur AWS IAM, avec des mappings dans `aws-auth` ConfigMap pour relier identités IAM et groupes RBAC Kubernetes.
 
-- Le point de terminaison API Kubernetes peut être configuré en privé pour limiter l’exposition à Internet.
-
 - Les fichiers de mots de passe et tokens statiques ne sont adaptés qu’aux environnements de test et ne doivent jamais être utilisés en production.
 
 ***
