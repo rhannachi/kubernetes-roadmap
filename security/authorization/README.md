@@ -305,7 +305,8 @@ Ainsi, tous les utilisateurs liés à ce rôle héritent des permissions défini
 ***
 
 ### Webhook Authorizer
-Le **Webhook Authorizer** permet de déléguer les décisions d'autorisation à un service externe via des appels API. Par exemple, **Open Policy Agent (OPA)** peut recevoir la requête d'autorisation du **kube-apiserver** et décider d'accorder ou refuser l'accès selon des règles avancées.
+Le **Webhook Authorizer** permet de déléguer les décisions d'autorisation à un service externe via des appels API.\
+Par exemple, **Open Policy Agent (OPA)** peut recevoir la requête d'autorisation du **kube-apiserver** et décider d'accorder ou refuser l'accès selon des règles avancées.
 
 **Exemple complet** :
 - Configurez le **kube-apiserver** avec l'option `--authorization-mode=Webhook` et spécifiez l'URL du service d'autorisation externe.
@@ -322,10 +323,51 @@ Le **Webhook Authorizer** permet de déléguer les décisions d'autorisation à 
 
 ## Configuration de plusieurs modes d'autorisation
 Il est possible de combiner plusieurs modes via une liste séparée par des virgules, par exemple :
-```bash
+```
 --authorization-mode=Node,RBAC,Webhook
 ```
-Les requêtes sont testées successivement par chaque module, dans l'ordre. Si une requête est approuvée par un module, elle n'est plus testée par les suivants. Si elle est refusée, le contrôle passe au module suivant, jusqu'à une décision finale.
+
+Lorsqu’on configure plusieurs modes d’autorisation dans le **kube-apiserver** via l’option `--authorization-mode`, l’enchaînement des contrôles s’effectue **dans l’ordre exact de la liste** fournie.\
+Chaque mode est interrogé successivement jusqu’à ce qu’une décision explicite soit prise.
+
+#### Fonctionnement détaillé de l’enchaînement
+
+1. Le **kube-apiserver** reçoit une requête d’accès à une ressource.
+
+2. Il évalue la requête avec le premier mode d’autorisation configuré (exemple : `Node`).
+
+    - Si ce mode **autorise explicitement** la requête, l’accès est accordé immédiatement, et les modes suivants ne sont pas consultés.
+
+    - Si ce mode **refuse explicitement** la requête, l’accès est refusé immédiatement, sans vérifier les autres modes.
+
+    - Si ce mode **n’a pas d’avis (no opinion)** — ni autorise ni refuse explicitement — la requête est transmise au mode suivant.
+
+3. Ce processus se répète pour le mode suivant dans la liste, et ainsi de suite.
+
+4. Si aucun des modes ne donne un avis explicite (autorisation ou refus), le mode final détermine la décision par défaut (souvent **AlwaysAllow** si configuré, ou par défaut refus).
+
+#### Exemple classique
+
+Si `--authorization-mode=Node,RBAC,Webhook` :
+
+- Le **Node Authorizer** examine la requête :
+    - S’il s’agit d’une requête liée à un Node et qu’il l’approuve => requête autorisée.
+    - Sinon, il renvoie "no opinion" et la requête est passée à RBAC.
+
+- Le module **RBAC** analyse la requête :
+    - S’il autorise la requête => accès accordé immédiatement.
+    - Sinon, "no opinion" → passe à Webhook.
+
+- Le **Webhook** fait sa propre vérification et donne la décision finale.
+
+#### Points importants
+- L’ordre dans la liste est crucial : les modes sont testés séquentiellement.
+- La première décision explicite (allow ou deny) **stoppe l’évaluation ultérieure**.
+- **AlwaysAllow** ou **AlwaysDeny** ont un impact fort s’ils sont placés en début de liste.
+- Cette modularité permet de combiner des mécanismes spécifiques et généraux de contrôle d’accès selon les besoins.
+
+
+
 
 ***
 
