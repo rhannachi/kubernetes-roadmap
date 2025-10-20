@@ -79,6 +79,7 @@
 3. **[ApiGroups](security/apiGroups/README.md)**
 4. **[Authorization](security/authorization/README.md)**
 5. **[RBAC](security/RBAC/README.md)**
+6. **[ClusterRoles](security/clusterRoles/README.md)**
 
 ## (TODO) Service mesh Istio Kubernetes
 ## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
