@@ -1,72 +1,135 @@
-# Admission Controller
+# Admission Controllers dans Kubernetes
 
-Lorsque nous utilisons la ligne de commande avec l’outil **kubectl** pour effectuer des opérations sur notre **Kubernetes cluster**, chaque requête passe par un processus précis :
+## 1. Flux général d’une requête Kubernetes
 
-1. **Requête vers le kube-apiserver** :\
-   Par exemple, lorsqu’on crée un **Pod**, la requête est envoyée au **kube-apiserver**, puis le Pod est créé et l’information est persistée dans la base **etcd**.
+Chaque requête envoyée via **kubectl** suit un chemin précis à travers le **plan de contrôle** :
 
-2. **Authentification (Authentication)** :\
-   La requête doit d’abord passer par un processus d’authentification, généralement basé sur des certificats.
-    * Si la requête provient de **kubectl**, le fichier **kubeconfig** contient les certificats nécessaires.
-    * L’authentification identifie l’utilisateur et vérifie qu’il est valide.
+```
+Utilisateur (kubectl)
+        ↓
+Authentication → Authorization → Admission Controllers → etcd
+```
 
-3. **Autorisation (Authorization)** :\
-   Une fois authentifié, **kube-apiserver** vérifie si l’utilisateur a le droit d’exécuter l’action demandée, via **Role-Based Access Control (RBAC)**.
-    * Exemple : un utilisateur avec le rôle **developer** peut **list**, **get**, **create**, **update** ou **delete Pods**.
-    * Si la requête correspond aux permissions, elle est autorisée ; sinon, elle est rejetée.
-    * RBAC permet aussi de restreindre l’accès à certains **Namespaces** ou à des noms de ressources spécifiques (ex : Pods nommés `blue` ou `orange`).
+1. **Requête vers kube-apiserver**  
+   Le **kube-apiserver** reçoit toutes les requêtes (liste, création, suppression, etc.) et enregistre les états finaux des objets dans **etcd**.
 
-4. **Limites de RBAC** :\
-   RBAC agit uniquement au niveau de l’API, et ne peut pas contrôler certains aspects des objets eux-mêmes, comme :
-    * Interdire l’utilisation d’images provenant de Docker Hub public.
-    * Interdire l’usage du tag `latest`.
-    * Interdire l’exécution d’un container en tant que **root**.
-    * Imposer que certains labels soient toujours présents.
-
-5. **Admission Controllers** :\
-   Pour aller au-delà de RBAC, Kubernetes utilise les **Admission Controllers**, qui peuvent :
-    * Valider les requêtes.
-    * Modifier la requête avant sa création.
-    * Effectuer des opérations supplémentaires côté cluster.
-
-   **Exemples :**
-    * **AlwaysPullImages** : force le pull des images à chaque création de Pod.
-    * **DefaultStorageClass** : applique automatiquement une **StorageClass** aux **PVC** si aucune n’est spécifiée.
-    * **EventRateLimit** : limite le nombre de requêtes envoyées au **kube-apiserver** pour éviter un flood.
-    * **NamespaceExists** : rejette les requêtes pour des **Namespaces** inexistants.
-
-   **Exemple pratique :**
+2. **Authentication**  
+   L’authentification identifie la source de la requête. Avec **kubectl**, cela s’appuie sur les certificats contenus dans le fichier **kubeconfig**.  
+   *Exemple :* vérification du certificat client avant de traiter la commande :
+   ```bash
+   kubectl get pods --kubeconfig ~/.kube/config
    ```
-   $ kubectl create pod nginx --namespace=blue
+
+3. **Authorization (RBAC)**  
+   Une fois authentifié, **kube-apiserver** vérifie si l’utilisateur a le droit d’effectuer l’opération via **Role-Based Access Control (RBAC)**.
+   ```yaml
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: Role
+   metadata:
+     namespace: dev
+     name: developer
+   rules:
+   - apiGroups: [""]
+     resources: ["pods"]
+     verbs: ["get", "list", "create", "update", "delete"]
    ```
-    * Si le **Namespace `blue`** n’existe pas, la requête passe par l’authentification et l’autorisation, puis est rejetée par **NamespaceExists**.
-    * Si on active **NamespaceAutoProvision**, le namespace est créé automatiquement avant la création du Pod.
+   Si le rôle permet l’action, la requête progresse. Sinon, elle est rejetée.
 
-6. **Gestion des Admission Controllers** :\
-    * Pour lister les plugins activés par défaut :
-      ```
-      $ kube-apiserver --enable-admission-plugins | grep enable-admission-plugins
-      ```
-    * Pour activer un admission controller, modifier le flag `--enable-admission-plugins` dans le **kube-apiserver manifest** ou dans le service si kubeadm est utilisé.
-    * Pour désactiver, utiliser `--disable-admission-plugins`.
+4. **Limites de RBAC**  
+   RBAC contrôle uniquement les **opérations API** autorisées, pas le contenu des objets. Il ne peut pas, par exemple :
+    - Interdire les images provenant de registres publics non sécurisés.
+    - Interdire l’utilisation du tag `latest`.
+    - Rejeter les containers tournant en tant que **root**.
+    - Exiger des **labels** ou **annotations** spécifiques.
 
-7. **Évolution : Namespace Lifecycle** :\
-   Les admission controllers **NamespaceExists** et **NamespaceAutoProvision** sont désormais dépréciés, remplacés par **NamespaceLifecycle**, qui :
-    * Rejette les requêtes sur des namespaces inexistants.
-    * Empêche la suppression des namespaces par défaut : `default`, `kube-system`, et `kube-public`.
+***
 
----
+## 2. Admission Controllers : définition et rôle
 
-### Résumé concis
+Les **Admission Controllers** prolongent la sécurité et la conformité au-delà du RBAC. Ils interviennent **après l’autorisation**, pour :
+- **Valider** une requête.
+- **Modifier** la requête avant son enregistrement.
+- **Refuser** la requête si elle ne respecte pas certaines règles.
 
-* Les requêtes **kubectl** passent par : **kube-apiserver → Authentication → Authorization → Admission Controllers → etcd**.
-* **RBAC** : contrôle les permissions des utilisateurs au niveau API (list, get, create, update, delete).
-* **Admission Controllers** : vont au-delà de RBAC, permettent de valider ou modifier des objets avant leur création.
+Deux types :
+- **Mutating Admission Controllers** : peuvent modifier les objets avant leur création (ex. injection automatique de secrets, sidecars, labels).
+- **Validating Admission Controllers** : valident ou rejettent les requêtes selon des règles de conformité.
 
-    * Exemples : **AlwaysPullImages**, **DefaultStorageClass**, **EventRateLimit**, **NamespaceExists**, **NamespaceAutoProvision**.
-* **NamespaceLifecycle** remplace les anciens admission controllers liés aux namespaces, en sécurisant leur création et leur suppression.
+### Exemples d’Admission Controllers natifs
 
----
+| Nom | Rôle |
+|------|------|
+| **AlwaysPullImages** | Force le téléchargement de l’image à chaque création de Pod. |
+| **DefaultStorageClass** | Attribue automatiquement une StorageClass par défaut aux PVC. |
+| **EventRateLimit** | Limite le volume de requêtes vers le kube-apiserver. |
+| **NamespaceLifecycle** | Vérifie l’existence des Namespaces et empêche la suppression des namespaces système (`default`, `kube-system`, `kube-public`). |
+| **PodSecurity** | Assure que les Pods respectent des règles de sécurité prédéfinies (remplace `PodSecurityPolicy`). |
+
+***
+
+## 3. Exemple pratique : Namespace Lifecycle
+
+### Cas 1 : Namespace inexistant
+```bash
+kubectl run nginx --image=nginx --namespace=blue
+```
+Si le **Namespace `blue`** n’existe pas :
+- La requête est **authentifiée** (certificats kubeconfig)
+- Puis **autorisée** (RBAC du développeur)
+- Enfin **refusée** par **NamespaceLifecycle**, car le Namespace n’existe pas.
+
+### Cas 2 : Ancien workflow déprécié
+Les anciens Admission Controllers :
+- `NamespaceExists`  ❌
+- `NamespaceAutoProvision`  ❌
+
+sont désormais **remplacés** par `NamespaceLifecycle` ✅.
+
+`NamespaceLifecycle` :
+- Empêche la suppression des Namespaces essentiels.
+- Rejette les requêtes dans des Namespaces inexistants.
+
+***
+
+## 4. Gestion et activation des Admission Controllers
+
+### 🔍 Vérifier les contrôleurs activés
+Sur un cluster **kubeadm** ou **EKS** :
+```bash
+ps -ef | grep kube-apiserver | grep enable-admission-plugins
+```
+ou, dans un Pod du plan de contrôle :
+```bash
+kubectl -n kube-system exec -it kube-apiserver-<nom> -- ps -ef | grep kube-apiserver
+```
+
+### ⚙️ Modifier la configuration
+- Pour **activer** un Admission Controller :
+  ```bash
+  --enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,AlwaysPullImages
+  ```
+- Pour **désactiver** un contrôleur :
+  ```bash
+  --disable-admission-plugins=EventRateLimit
+  ```
+
+Sous **Minikube**, on peut passer ces options au démarrage :
+```bash
+minikube start --extra-config=apiserver.enable-admission-plugins=NamespaceLifecycle,AlwaysPullImages
+```
+
+***
+
+## 5. Résumé concis
+
+* Les requêtes Kubernetes passent par : **kube-apiserver → Authentication → Authorization → Admission Controllers → etcd**.
+* **RBAC** gère les permissions d’accès API, mais ne contrôle pas le contenu des objets.
+* **Admission Controllers** apportent un niveau de validation et de conformité supplémentaire.
+* **NamespaceLifecycle** remplace les anciens contrôleurs NamespaceExists et NamespaceAutoProvision.
+* **EKS** active par défaut plusieurs admission plugins essentiels : `NamespaceLifecycle`, `LimitRanger`, `ServiceAccount`, `DefaultStorageClass`, `ResourceQuota`, `MutatingAdmissionWebhook`, `ValidatingAdmissionWebhook`, `PodSecurity`.
+* **Good practice EKS :** toujours limiter la portée des webhooks et ajouter un mode de repli en cas d’erreur.
+
+***
 
 ```
 Utilisateur (kubectl)

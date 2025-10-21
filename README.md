@@ -76,11 +76,15 @@
 ## Security
 1. **[Authentification](security/authentification/README.md)**
 2. **[KubeConfig](security/kubeConfig/README.md)**
+   1. **[Exercice 1](security/kubeConfig/exercices/README.md)**
 3. **[ApiGroups](security/apiGroups/README.md)**
 4. **[Authorization](security/authorization/README.md)**
 5. **[RBAC](security/RBAC/README.md)**
+   1. **[Exercice 1](security/RBAC/exercices/README.md)**
 6. **[ClusterRoles](security/clusterRoles/README.md)**
 7. **[Admission Controllers](security/admissionControllers/README.md)**
+    1. **[Exercice 1](security/admissionControllers/exercices/README.md)**
+
 
 ## (TODO) Service mesh Istio Kubernetes
 ## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
