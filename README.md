@@ -83,7 +83,8 @@
    1. **[Exercice 1](security/RBAC/exercices/README.md)**
 6. **[ClusterRoles](security/clusterRoles/README.md)**
 7. **[Admission Controllers](security/admissionControllers/README.md)**
-    1. **[Exercice 1](security/admissionControllers/exercices/README.md)**
+   1. **[Exercice 1](security/admissionControllers/exercices/README.md)**
+   2. **[Exercice 2](security/admissionControllers/exercices/README-2.md)**
 
 
 ## (TODO) Service mesh Istio Kubernetes

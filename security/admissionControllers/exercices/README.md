@@ -1,4 +1,4 @@
-## Cas 1 : Activer / désactiver un Admission Controller sur Minikube
+## Activer / désactiver un Admission Controller sur Minikube
 
 Minikube permet de passer facilement des options à `kube-apiserver` via le flag `--extra-config`.  
 Dans cet exemple, tu vas **activer le plugin `AlwaysPullImages`** et **désactiver `DefaultStorageClass`**.
