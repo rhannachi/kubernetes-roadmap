@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-red
+  namespace: {{ .Values.app1.namespace }}
+  labels:
+    app: web-red
+spec:
+  replicas: {{ .Values.app1.replicas }}
+  selector:
+    matchLabels:
+      app: web-red
+  template:
+    metadata:
+      labels:
+        app: web-red
+    spec:
+      containers:
+        - name: nginx-web-red
+          image: {{ .Values.app1.image }}
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>RED APP ({{ .Values.app1.namespace }})</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-web-blue
+  namespace: {{ .Values.app1.namespace }}
+  labels:
+    app: web-blue
+spec:
+  replicas: {{ .Values.app1.replicas }}
+  selector:
+    matchLabels:
+      app: web-blue
+  template:
+    metadata:
+      labels:
+        app: web-blue
+    spec:
+      containers:
+        - name: nginx-web-blue
+          image: {{ .Values.app1.image }}
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh", "-c"]
+          args:
+            - echo "<h1>BLUE APP ({{ .Values.app1.namespace }})</h1>" > /usr/share/nginx/html/index.html && nginx -g 'daemon off;'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-red
+  namespace: {{ .Values.app1.namespace }}
+spec:
+  selector:
+    app: web-red
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-web-blue
+  namespace: {{ .Values.app1.namespace }}
+spec:
+  selector:
+    app: web-blue
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-app1
+  namespace: {{ .Values.app1.namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: {{ .Values.ingressClass.name }}
+  rules:
+    - http:
+        paths:
+          - path: /app1/red(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-red
+                port:
+                  number: 80
+          - path: /app1/blue(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: svc-web-blue
+                port:
+                  number: 80

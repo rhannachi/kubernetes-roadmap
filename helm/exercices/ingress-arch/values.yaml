@@ -1,0 +1,23 @@
+# Global parameters
+controller:
+  namespace: ingress-edge
+  name: ingress-nginx-controller
+  image: registry.k8s.io/ingress-nginx/controller:v1.9.0
+  replicas: 1
+
+app1:
+  namespace: app1
+  replicas: 1
+  image: nginx:latest
+
+app2:
+  namespace: app2
+  replicas: 1
+  image: nginx:latest
+
+service:
+  type: LoadBalancer
+
+ingressClass:
+  name: ingress-nginx-edge
+  controller: k8s.io/ingress-nginx

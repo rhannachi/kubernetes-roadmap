@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deploy-{{ .Values.controller.name }}
+  namespace: {{ .Values.controller.namespace }}
+  labels:
+    app: {{ .Values.controller.name }}
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.controller.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.controller.name }}
+    spec:
+      serviceAccountName: sa-ingress-nginx-controller
+      containers:
+        - name: nginx-controller
+          image: {{ .Values.controller.image }}
+          args:
+            - /nginx-ingress-controller
+            - --publish-service=$(POD_NAMESPACE)/svc-{{ .Values.controller.name }}
+            - --election-id=ingress-controller-leader-edge
+            - --controller-class=k8s.io/ingress-nginx
+            - --ingress-class={{ .Values.ingressClass.name }}
+            - --configmap=$(POD_NAMESPACE)/ingress-nginx-config
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 10254
+          securityContext:
+            runAsUser: 101
+            allowPrivilegeEscalation: false
