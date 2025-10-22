@@ -88,7 +88,8 @@
 8. **[Validation Mutation AdmissionControllers](./security/validation-mutation-admissionControllers/README.md)**
    1. **[Exercice 1](security/validation-mutation-admissionControllers/exercices/README.md)**
 
+***
 
-## (TODO) Service mesh Istio Kubernetes
-## (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
+### (TODO) Service mesh Istio Kubernetes
+### (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
 
