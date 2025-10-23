@@ -111,6 +111,14 @@ spec:
   replicas: 5
 ```
 
+Mais **comment Kustomize sait où appliquer chaque patch ?**
+
+#### Principe du "matching"
+
+Kustomize utilise la combinaison des champs `kind`, `apiVersion`, et surtout `metadata.name` pour faire le lien :
+- Si, par exemple, tu crées un patch de type `Deployment` avec `metadata.name: nginx`, Kustomize recherche dans les ressources importées (base) une ressource de même type (`Deployment`) et portant le même nom (`nginx`).
+- Si elle la trouve, elle fusionne le contenu du patch selon la logique de "strategic merge patch" : seuls les champs présents dans le patch sont modifiés ou ajoutés, le reste reste inchangé.
+
 ***
 
 ### Génération et application
