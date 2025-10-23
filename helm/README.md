@@ -170,3 +170,176 @@ $ helm rollback myapp 1
 
 ---
 
+# Commande utile 
+
+## 1. `helm search repo wordpress`
+
+**But :**
+Chercher une chart disponible dans les dépôts Helm configurés localement.
+En d'autres termes : “Montre-moi les charts qui contiennent le mot *wordpress*.”
+
+**Exemple de commande :**
+
+```bash
+helm search repo wordpress
+```
+
+**Exemple de sortie :**
+
+```
+NAME                    CHART VERSION   APP VERSION     DESCRIPTION
+bitnami/wordpress       18.0.7          6.6.2           WordPress is the world’s most popular blogging and CMS platform.
+```
+
+**Explication :**
+
+* `NAME` : nom complet de la chart (`repo/chartname`)
+* `CHART VERSION` : version du modèle Helm
+* `APP VERSION` : version réelle de l’application
+* `DESCRIPTION` : description courte de la chart
+
+---
+
+## 2. `helm repo list`
+
+**But :**
+Lister les dépôts Helm configurés localement (comme les dépôts APT ou YUM sous Linux).
+
+**Exemple de commande :**
+
+```bash
+helm repo list
+```
+
+**Exemple de sortie :**
+
+```
+NAME   	URL
+bitnami	https://charts.bitnami.com/bitnami
+```
+
+**Explication :**
+
+* `NAME` : nom du dépôt
+* `URL` : adresse du dépôt Helm
+
+Tu peux ajouter un dépôt avec :
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+
+et mettre à jour les index avec :
+
+```bash
+helm repo update
+```
+
+---
+
+## 3. `helm install bravo bitnami/drupal`
+
+**But :**
+Installer la chart **Drupal** depuis le dépôt **bitnami** et lui donner le nom de release **bravo**.
+
+**Exemple de commande :**
+
+```bash
+helm install bravo bitnami/drupal
+```
+
+**Exemple de sortie :**
+
+```
+NAME: bravo
+LAST DEPLOYED: Thu Oct 23 12:01:15 2025
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+CHART NAME: drupal
+CHART VERSION: 15.2.6
+APP VERSION: 10.2.2
+** Please be patient while the chart is being deployed **
+Drupal can be accessed through the following DNS name from within your cluster:
+    bravo-drupal.default.svc.cluster.local (port 80)
+```
+
+**Explication :**
+
+* Helm télécharge la chart `bitnami/drupal`
+* Il rend les templates YAML
+* Il applique les manifests Kubernetes dans ton cluster
+* Il enregistre cette installation sous le nom `bravo`
+
+---
+
+## 4. `helm list`
+
+**But :**
+Lister toutes les releases Helm installées dans ton cluster.
+
+**Exemple de commande :**
+
+```bash
+helm list
+```
+
+**Exemple de sortie :**
+
+```
+NAME   	NAMESPACE	REVISION	UPDATED                                	STATUS  	CHART         	APP VERSION
+bravo  	default  	1        	2025-10-23 12:01:15.123456 +0000 UTC  	deployed	drupal-15.2.6 	10.2.2
+```
+
+**Explication :**
+
+* `NAME` : nom de la release (`bravo`)
+* `NAMESPACE` : namespace dans lequel elle est installée
+* `REVISION` : numéro de version de la release
+* `STATUS` : état actuel (`deployed`, `failed`, etc.)
+
+Tu peux voir toutes les releases dans tous les namespaces avec :
+
+```bash
+helm list -A
+```
+
+---
+
+## 5. `helm uninstall bravo`
+
+**But :**
+Supprimer proprement la release `bravo` et toutes les ressources Kubernetes qu’elle a créées.
+
+**Exemple de commande :**
+
+```bash
+helm uninstall bravo
+```
+
+**Exemple de sortie :**
+
+```
+release "bravo" uninstalled
+```
+
+**Explication :**
+
+* Helm supprime tous les objets Kubernetes associés à la release (`Deployment`, `Service`, `ConfigMap`, etc.)
+* Il efface aussi les informations de la release de son registre interne
+
+---
+
+## Résumé
+
+| Commande                            | Action                                         | Exemple de sortie                            | Description                                  |
+| ----------------------------------- | ---------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
+| `helm search repo wordpress`        | Recherche une chart dans les dépôts configurés | `bitnami/wordpress`                          | Trouve la chart WordPress disponible         |
+| `helm repo list`                    | Liste les dépôts Helm locaux                   | `bitnami https://charts.bitnami.com/bitnami` | Vérifie les dépôts ajoutés                   |
+| `helm install bravo bitnami/drupal` | Installe la chart Drupal sous le nom `bravo`   | `STATUS: deployed`                           | Déploie les ressources Kubernetes            |
+| `helm list`                         | Liste les releases installées                  | `bravo  deployed  drupal-15.2.6`             | Vérifie les déploiements Helm actifs         |
+| `helm uninstall bravo`              | Supprime la release `bravo`                    | `release "bravo" uninstalled`                | Désinstalle proprement toutes les ressources |
+
+---
