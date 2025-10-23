@@ -93,6 +93,9 @@
    1. **[Exercice 1](helm/exercices/exercice-1/README.md)**
    2. **[Exercice 2](helm/exercices/exercice-2/README.md)**
 
+## Kustomize
+1. **[Problem & Ideology](kustomize/problem-ideology/README.md)**
+
 ***
 
 ### (TODO) Service mesh Istio Kubernetes
