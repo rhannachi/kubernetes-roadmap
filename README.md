@@ -90,7 +90,8 @@
 
 ## Helm
 1. **[Helm](helm/README.md)**
-   1. **[Exercice 1](helm/exercices/README.md)**
+   1. **[Exercice 1](helm/exercices/exercice-1/README.md)**
+   2. **[Exercice 2](helm/exercices/exercice-2/README.md)**
 
 ***
 
