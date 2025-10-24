@@ -95,6 +95,11 @@
 
 ## Kustomize
 1. **[Problem & Ideology](kustomize/problem-ideology/README.md)**
+   1. **[Exercices](kustomize/problem-ideology/exercices/README.md)**
+2. **[Common image transformers](kustomize/common-image-transformers/README.md)**
+3. **[Helm $ Kustomize](kustomize/helm-kustomize/README.md)**
+4. **[Managing directories](kustomize/managing-directories/README.md)**
+5. **[Patchs](kustomize/patchs/README.md)**
 
 ***
 
