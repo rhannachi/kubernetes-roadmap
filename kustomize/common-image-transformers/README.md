@@ -415,3 +415,99 @@ Pour visualiser le YAML transformé sans le déployer :
 kubectl kustomize .
 ```
 
+***
+
+# Kustomize – Image Transformations dans Kubernetes
+
+L’image transformer est un mécanisme de **Kustomize** permettant de modifier l’image utilisée par un **Deployment** ou un **Container** sans modifier directement les fichiers YAML sources.
+
+Prenons un exemple concret : supposons que nous ayons un fichier `deployment.yaml` qui déploie un serveur **nginx**. L’image par défaut est donc `nginx`.\
+Grâce à **Kustomize**, nous pouvons la remplacer facilement par une autre image, comme **haproxy**, via un fichier `kustomization.yaml`.
+
+#### Exemple : changer l’image d’un Deployment
+
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: nginx
+```
+
+```yaml
+# kustomization.yaml
+resources:
+  - deployment.yaml
+
+images:
+  - name: nginx
+    newName: haproxy
+```
+
+Lors de l’application de cette configuration avec `kubectl apply -k .`, **Kustomize** parcourt toutes les ressources Kubernetes définies et remplace automatiquement chaque image nommée `nginx` par `haproxy`.
+
+> **Attention :** la propriété `name` dans la section `images` du `kustomization.yaml` désigne le nom de l’image à remplacer, **pas** le nom du container dans le Deployment. Le champ `containers.name` (ici, *web*) n’a donc aucune incidence.
+
+***
+
+#### Exemple : modifier le tag d’une image
+
+Il est aussi possible de ne pas changer l’image, mais simplement d’en modifier le **tag**. Pour cela, on utilise la propriété `newTag` :
+
+```yaml
+# kustomization.yaml
+resources:
+  - deployment.yaml
+
+images:
+  - name: nginx
+    newTag: "2.4"
+```
+
+Résultat : toutes les références à `nginx` deviendront `nginx:2.4`.
+
+***
+
+#### Exemple combiné : changer à la fois l’image et son tag
+
+Nous pouvons également combiner les deux propriétés `newName` et `newTag` afin de modifier à la fois le nom de l’image et sa version :
+
+```yaml
+# kustomization.yaml
+resources:
+  - deployment.yaml
+
+images:
+  - name: nginx
+    newName: haproxy
+    newTag: "2.4"
+```
+
+Le résultat final sera alors `haproxy:2.4`.
+
+***
+
+### Résumé concis
+
+- Le **image transformer** de **Kustomize** permet de modifier les images Docker référencées dans des manifests Kubernetes sans en altérer le contenu d’origine.
+- Les propriétés `newName` et `newTag` servent respectivement à modifier le nom de l’image et son tag.
+- La propriété `name` fait référence à l’image ciblée, et non au nom du container.
+- Commande d’application :
+  ```bash
+  kubectl apply -k .
+  ```
+
+***
