@@ -102,6 +102,8 @@
 5. **[Patchs](kustomize/patchs/README.md)**
 6. **[Patchs dictionary & list](kustomize/patchs-dictionary-list/README.md)**
    1. **[Exercice 1](kustomize/patchs-dictionary-list/exercices/README.md)**
+7. **[Overlay](kustomize/overlay/README.md)**
+8. **[Components](kustomize/components/README.md)**
 
 ***
 
