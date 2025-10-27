@@ -105,8 +105,3 @@
 7. **[Overlay](kustomize/overlay/README.md)**
 8. **[Components](kustomize/components/README.md)**
 
-***
-
-### (TODO) Service mesh Istio Kubernetes
-### (TODO) Elasticsearch and Kibana on Kubernetes (logs, métriques, événements)
-
