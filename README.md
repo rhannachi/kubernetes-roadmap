@@ -100,6 +100,8 @@
 3. **[Helm $ Kustomize](kustomize/helm-kustomize/README.md)**
 4. **[Managing directories](kustomize/managing-directories/README.md)**
 5. **[Patchs](kustomize/patchs/README.md)**
+6. **[Patchs dictionary & list](kustomize/patchs-dictionary-list/README.md)**
+   1. **[Exercice 1](kustomize/patchs-dictionary-list/exercices/README.md)**
 
 ***
 
